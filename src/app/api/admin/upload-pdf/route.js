@@ -15,6 +15,6 @@ export async function POST(req) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const { data } = supabaseAdmin.storage.from('contratos-pdf').getPublicUrl(filename)
-  return NextResponse.json({ url: data.publicUrl })
+  // Guardamos el path, no la URL pública
+  return NextResponse.json({ url: filename })
 }

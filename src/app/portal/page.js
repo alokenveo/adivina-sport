@@ -34,6 +34,12 @@ export default function Portal() {
     router.push('/login')
   }
 
+  async function verPdf(pdfPath) {
+    const res = await fetch(`/api/portal/signed-url?path=${encodeURIComponent(pdfPath)}`)
+    const { url } = await res.json()
+    window.open(url, '_blank')
+  }
+
   function fmtFecha(d) {
     if (!d) return '—'
     const p = d.split('-')
@@ -216,13 +222,13 @@ export default function Portal() {
                     </div>
                     <span className={`contrato-tag ${tagClass[c.estado] || ''}`}>{c.estado}</span>
                     {c.pdf_url && (
-                      <a className="btn-pdf" href={c.pdf_url} target="_blank" rel="noreferrer">
+                      <button className="btn-pdf" onClick={() => verPdf(c.pdf_url)}>
                         <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
                           <path d="M8 10V3M5 7l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           <path d="M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                         Ver PDF
-                      </a>
+                      </button>
                     )}
                   </div>
                 ))}
