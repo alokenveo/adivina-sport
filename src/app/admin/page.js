@@ -222,9 +222,12 @@ export default function Admin() {
         <div className="topbar-sep" />
         <span className="admin-badge">Panel Admin</span>
         <div className="topbar-right">
-          <span style={{fontSize:'12px', color:'var(--text2)'}}>admin@adivinasports.com</span>
-          <button className="btn-out" onClick={() => router.push('/login')}>
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <span style={{ fontSize: '12px', color: 'var(--text2)' }}>admin@adivinasports.com</span>
+          <button className="btn-out" onClick={() => {
+            document.cookie = 'isAdmin=; path=/; max-age=0'
+            router.push('/login')
+          }}>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Salir
           </button>
         </div>
@@ -235,7 +238,7 @@ export default function Admin() {
         <nav className="sidebar">
           <div className="sidebar-label">Gestión</div>
           <div className={`nav-item ${seccion === 'instituciones' ? 'active' : ''}`} onClick={() => setSeccion('instituciones')}>
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.4"/><path d="M2 14c0-3 2.686-4.5 6-4.5s6 1.5 6 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.4" /><path d="M2 14c0-3 2.686-4.5 6-4.5s6 1.5 6 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
             Instituciones
             <span className="nav-count">{instituciones.length}</span>
           </div>
@@ -243,12 +246,12 @@ export default function Admin() {
           <div className="sidebar-section">
             <div className="sidebar-label">Contenido</div>
             <div className={`nav-item ${seccion === 'contratos' ? 'active' : ''}`} onClick={() => setSeccion('contratos')}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-4-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M10 1v4h4" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-4-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /><path d="M10 1v4h4" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /></svg>
               Contratos
               <span className="nav-count">{contratos.length}</span>
             </div>
             <div className={`nav-item ${seccion === 'anuncios' ? 'active' : ''}`} onClick={() => setSeccion('anuncios')}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 3H3a1 1 0 00-1 1v6a1 1 0 001 1h2v2.5l3-2.5h5a1 1 0 001-1V4a1 1 0 00-1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 3H3a1 1 0 00-1 1v6a1 1 0 001 1h2v2.5l3-2.5h5a1 1 0 001-1V4a1 1 0 00-1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /></svg>
               Anuncios
               <span className="nav-count">{anuncios.length}</span>
             </div>
@@ -264,7 +267,7 @@ export default function Admin() {
               <div className="page-header">
                 <div className="page-title">Instituciones</div>
                 <button className="btn-primary" onClick={openNewInst}>
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                   Nueva institución
                 </button>
               </div>
@@ -286,15 +289,15 @@ export default function Admin() {
                           </div>
                         </td>
                         <td><span className={`tag ${i.activo ? 'tag-active' : 'tag-inactive'}`}>{i.activo ? 'activo' : 'inactivo'}</span></td>
-                        <td style={{color:'var(--text3)'}}>{instContratosCount(i.id)}</td>
+                        <td style={{ color: 'var(--text3)' }}>{instContratosCount(i.id)}</td>
                         <td>
                           <div className="row-actions">
                             <button className="btn-icon" onClick={() => openEditInst(i)}>
-                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /></svg>
                               Editar
                             </button>
                             <button className="btn-icon danger" onClick={() => askDelete('inst', i.id, i.nombre)}>
-                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
                             </button>
                           </div>
                         </td>
@@ -312,7 +315,7 @@ export default function Admin() {
               <div className="page-header">
                 <div className="page-title">Contratos</div>
                 <button className="btn-primary" onClick={openNewCont}>
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                   Subir contrato
                 </button>
               </div>
@@ -324,16 +327,16 @@ export default function Admin() {
                       <tr key={c.id}>
                         <td className="primary">{c.titulo}</td>
                         <td>{instNombreById(c.institucion_id)}</td>
-                        <td style={{color:'var(--text3)'}}>{fmtFecha(c.fecha_subida)}</td>
+                        <td style={{ color: 'var(--text3)' }}>{fmtFecha(c.fecha_subida)}</td>
                         <td><span className={`tag ${tagClass[c.estado] || ''}`}>{c.estado}</span></td>
                         <td>
                           <div className="row-actions">
                             <button className="btn-icon" onClick={() => openEditCont(c)}>
-                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /></svg>
                               Editar
                             </button>
                             <button className="btn-icon danger" onClick={() => askDelete('cont', c.id, c.titulo)}>
-                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
                             </button>
                           </div>
                         </td>
@@ -351,7 +354,7 @@ export default function Admin() {
               <div className="page-header">
                 <div className="page-title">Anuncios</div>
                 <button className="btn-primary" onClick={openNewAnun}>
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
                   Nuevo anuncio
                 </button>
               </div>
@@ -362,16 +365,16 @@ export default function Admin() {
                     {anuncios.map(a => (
                       <tr key={a.id}>
                         <td className="primary">{a.titulo}</td>
-                        <td>{a.institucion_id ? instNombreById(a.institucion_id) : <span style={{color:'var(--text3)', fontStyle:'italic'}}>Todas</span>}</td>
-                        <td style={{color:'var(--text3)'}}>{fmtFecha(a.fecha_creacion)}</td>
+                        <td>{a.institucion_id ? instNombreById(a.institucion_id) : <span style={{ color: 'var(--text3)', fontStyle: 'italic' }}>Todas</span>}</td>
+                        <td style={{ color: 'var(--text3)' }}>{fmtFecha(a.fecha_creacion)}</td>
                         <td>
                           <div className="row-actions">
                             <button className="btn-icon" onClick={() => openEditAnun(a)}>
-                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-9 9H2v-3L11 2z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /></svg>
                               Editar
                             </button>
                             <button className="btn-icon danger" onClick={() => askDelete('anun', a.id, a.titulo)}>
-                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
                             </button>
                           </div>
                         </td>
@@ -393,9 +396,9 @@ export default function Admin() {
             <div className="modal-close" onClick={() => setModalInst(false)}>✕</div>
             <div className="modal-title">{editingId ? 'Editar institución' : 'Nueva institución'}</div>
             <div className="modal-sub">Rellena los datos de la institución deportiva</div>
-            <div className="form-field"><label className="form-label">Nombre</label><input className="form-input" value={instNombre} onChange={e => setInstNombre(e.target.value)} placeholder="Ej: Nueva Era C.B"/></div>
-            <div className="form-field"><label className="form-label">Contraseña de acceso{editingId && ' (dejar vacío para no cambiar)'}</label><input className="form-input" type="password" value={instPass} onChange={e => setInstPass(e.target.value)} placeholder="Contraseña para el portal"/></div>
-            <div className="form-field"><label className="form-label">Descripción</label><input className="form-input" value={instDesc} onChange={e => setInstDesc(e.target.value)} placeholder="Ej: Club de baloncesto"/></div>
+            <div className="form-field"><label className="form-label">Nombre</label><input className="form-input" value={instNombre} onChange={e => setInstNombre(e.target.value)} placeholder="Ej: Nueva Era C.B" /></div>
+            <div className="form-field"><label className="form-label">Contraseña de acceso{editingId && ' (dejar vacío para no cambiar)'}</label><input className="form-input" type="password" value={instPass} onChange={e => setInstPass(e.target.value)} placeholder="Contraseña para el portal" /></div>
+            <div className="form-field"><label className="form-label">Descripción</label><input className="form-input" value={instDesc} onChange={e => setInstDesc(e.target.value)} placeholder="Ej: Club de baloncesto" /></div>
             <div className="form-field"><label className="form-label">Estado</label>
               <select className="form-input" value={instEstado} onChange={e => setInstEstado(e.target.value)}>
                 <option value="activo">Activo</option>
@@ -414,14 +417,14 @@ export default function Admin() {
             <div className="modal-close" onClick={() => setModalCont(false)}>✕</div>
             <div className="modal-title">{editingId ? 'Editar contrato' : 'Subir contrato'}</div>
             <div className="modal-sub">Asocia el contrato a una institución</div>
-            <div className="form-field"><label className="form-label">Título</label><input className="form-input" value={contTitulo} onChange={e => setContTitulo(e.target.value)} placeholder="Ej: Acuerdo de patrocinio 2025"/></div>
+            <div className="form-field"><label className="form-label">Título</label><input className="form-input" value={contTitulo} onChange={e => setContTitulo(e.target.value)} placeholder="Ej: Acuerdo de patrocinio 2025" /></div>
             <div className="form-field"><label className="form-label">Institución</label>
               <select className="form-input" value={contInstId} onChange={e => setContInstId(e.target.value)}>
                 {instituciones.map(i => <option key={i.id} value={i.id}>{i.nombre}</option>)}
               </select>
             </div>
             <div className="form-row">
-              <div className="form-field"><label className="form-label">Fecha de subida</label><input className="form-input" type="date" value={contFecha} onChange={e => setContFecha(e.target.value)}/></div>
+              <div className="form-field"><label className="form-label">Fecha de subida</label><input className="form-input" type="date" value={contFecha} onChange={e => setContFecha(e.target.value)} /></div>
               <div className="form-field"><label className="form-label">Estado</label>
                 <select className="form-input" value={contEstado} onChange={e => setContEstado(e.target.value)}>
                   <option value="activo">Activo</option>
@@ -434,11 +437,11 @@ export default function Admin() {
               <label className="form-label">Archivo PDF</label>
               <div className="upload-zone" onClick={() => contFileRef.current.click()}>
                 <div className="upload-zone-icon">
-                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M10 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-4-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M10 1v4h4" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M10 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-4-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /><path d="M10 1v4h4" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /></svg>
                 </div>
                 <div className="upload-zone-text">{contFileName}</div>
               </div>
-              <input ref={contFileRef} type="file" accept=".pdf" style={{display:'none'}} onChange={e => { setContFile(e.target.files[0]); setContFileName('✓ ' + e.target.files[0]?.name) }}/>
+              <input ref={contFileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { setContFile(e.target.files[0]); setContFileName('✓ ' + e.target.files[0]?.name) }} />
             </div>
             <button className="btn-modal-submit" onClick={saveCont} disabled={saving}>{saving ? 'Guardando...' : 'Guardar contrato'}</button>
           </div>
@@ -452,15 +455,15 @@ export default function Admin() {
             <div className="modal-close" onClick={() => setModalAnun(false)}>✕</div>
             <div className="modal-title">{editingId ? 'Editar anuncio' : 'Nuevo anuncio'}</div>
             <div className="modal-sub">Publica un comunicado para una institución o para todas</div>
-            <div className="form-field"><label className="form-label">Título</label><input className="form-input" value={anunTitulo} onChange={e => setAnunTitulo(e.target.value)} placeholder="Ej: Convocatoria torneo primavera"/></div>
+            <div className="form-field"><label className="form-label">Título</label><input className="form-input" value={anunTitulo} onChange={e => setAnunTitulo(e.target.value)} placeholder="Ej: Convocatoria torneo primavera" /></div>
             <div className="form-field"><label className="form-label">Institución destinataria</label>
               <select className="form-input" value={anunInstId} onChange={e => setAnunInstId(e.target.value)}>
                 <option value="">— Todas las instituciones —</option>
                 {instituciones.map(i => <option key={i.id} value={i.id}>{i.nombre}</option>)}
               </select>
             </div>
-            <div className="form-field"><label className="form-label">Contenido</label><textarea className="form-input" rows="4" value={anunContenido} onChange={e => setAnunContenido(e.target.value)} placeholder="Escribe el contenido del anuncio..." style={{resize:'vertical'}}/></div>
-            <div className="form-field"><label className="form-label">Fecha</label><input className="form-input" type="date" value={anunFecha} onChange={e => setAnunFecha(e.target.value)}/></div>
+            <div className="form-field"><label className="form-label">Contenido</label><textarea className="form-input" rows="4" value={anunContenido} onChange={e => setAnunContenido(e.target.value)} placeholder="Escribe el contenido del anuncio..." style={{ resize: 'vertical' }} /></div>
+            <div className="form-field"><label className="form-label">Fecha</label><input className="form-input" type="date" value={anunFecha} onChange={e => setAnunFecha(e.target.value)} /></div>
             <button className="btn-modal-submit" onClick={saveAnun} disabled={saving}>{saving ? 'Publicando...' : 'Publicar anuncio'}</button>
           </div>
         </div>
@@ -471,9 +474,9 @@ export default function Admin() {
         <div className="overlay open" onClick={e => { if (e.target.classList.contains('overlay')) setModalConfirm(false) }}>
           <div className="modal confirm-modal">
             <div className="modal-close" onClick={() => setModalConfirm(false)}>✕</div>
-            <div style={{marginBottom:'10px'}}>
-              <div style={{width:'36px', height:'36px', background:'rgba(232,33,42,0.1)', borderRadius:'8px', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'12px'}}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="#E8212A" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <div style={{ marginBottom: '10px' }}>
+              <div style={{ width: '36px', height: '36px', background: 'rgba(232,33,42,0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5 4V2h6v2M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="#E8212A" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </div>
             </div>
             <div className="modal-title">¿Eliminar elemento?</div>

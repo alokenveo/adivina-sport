@@ -39,6 +39,8 @@ export default function Login() {
             const { club } = await res.json()
             sessionStorage.setItem('clubId', club.id)
             sessionStorage.setItem('clubNombre', club.nombre)
+            // Guardar cookie para el middleware
+            document.cookie = `clubId=${club.id}; path=/; max-age=86400`
             router.push('/portal')
         } else {
             setLoginError('Institución o contraseña incorrecta.')
@@ -56,6 +58,8 @@ export default function Login() {
             body: JSON.stringify({ usuario: adminUser, contrasena: adminPass })
         })
         if (res.ok) {
+            // Guardar cookie para el middleware
+            document.cookie = `isAdmin=true; path=/; max-age=86400`
             setAdminSuccess(true)
             setTimeout(() => router.push('/admin'), 1800)
         } else {

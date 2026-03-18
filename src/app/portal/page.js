@@ -30,6 +30,7 @@ export default function Portal() {
 
   function cerrarSesion() {
     sessionStorage.clear()
+    document.cookie = 'clubId=; path=/; max-age=0'
     router.push('/login')
   }
 
@@ -70,7 +71,7 @@ export default function Portal() {
           </div>
           <button className="btn-signout" onClick={cerrarSesion}>
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-              <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Cerrar sesión
           </button>
@@ -86,10 +87,10 @@ export default function Portal() {
           <div className={`nav-item ${seccion === 'dashboard' ? 'active' : ''}`} onClick={() => setSeccion('dashboard')}>
             <span className="nav-icon">
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                <rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-                <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-                <rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-                <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+                <rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+                <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
               </svg>
             </span>
             Dashboard
@@ -100,9 +101,9 @@ export default function Portal() {
             <div className={`nav-item ${seccion === 'contratos' ? 'active' : ''}`} onClick={() => setSeccion('contratos')}>
               <span className="nav-icon">
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                  <path d="M10 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-4-4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                  <path d="M10 1v4h4" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                  <path d="M5 9h6M5 11.5h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                  <path d="M10 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-4-4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                  <path d="M10 1v4h4" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                  <path d="M5 9h6M5 11.5h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                 </svg>
               </span>
               Contratos
@@ -110,7 +111,7 @@ export default function Portal() {
             <div className={`nav-item ${seccion === 'anuncios' ? 'active' : ''}`} onClick={() => setSeccion('anuncios')}>
               <span className="nav-icon">
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                  <path d="M13 3H3a1 1 0 00-1 1v6a1 1 0 001 1h2v2.5l3-2.5h5a1 1 0 001-1V4a1 1 0 00-1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                  <path d="M13 3H3a1 1 0 00-1 1v6a1 1 0 001 1h2v2.5l3-2.5h5a1 1 0 001-1V4a1 1 0 00-1-1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
                 </svg>
               </span>
               Anuncios
@@ -123,8 +124,8 @@ export default function Portal() {
             <div className={`nav-item ${seccion === 'datos' ? 'active' : ''}`} onClick={() => setSeccion('datos')}>
               <span className="nav-icon">
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.5"/>
-                  <path d="M2 13c0-3 2.686-5 6-5s6 2 6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  <circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M2 13c0-3 2.686-5 6-5s6 2 6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </span>
               Datos del club
@@ -160,7 +161,7 @@ export default function Portal() {
                 </div>
                 <div className="stat-card">
                   <div className="stat-label">Estado membresía</div>
-                  <div className="stat-value" style={{fontSize:'14px', paddingTop:'6px', color:'#4ade80'}}>● Activo</div>
+                  <div className="stat-value" style={{ fontSize: '14px', paddingTop: '6px', color: '#4ade80' }}>● Activo</div>
                   <div className="stat-detail">Hasta dic. 2025</div>
                 </div>
               </div>
@@ -205,8 +206,8 @@ export default function Portal() {
                   <div key={c.id} className="contrato-item">
                     <div className="contrato-icon">
                       <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-                        <path d="M10 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-4-4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                        <path d="M10 1v4h4" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+                        <path d="M10 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-4-4z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                        <path d="M10 1v4h4" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
                       </svg>
                     </div>
                     <div className="contrato-info">
@@ -217,8 +218,8 @@ export default function Portal() {
                     {c.pdf_url && (
                       <a className="btn-pdf" href={c.pdf_url} target="_blank" rel="noreferrer">
                         <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                          <path d="M8 10V3M5 7l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                          <path d="M8 10V3M5 7l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                         Ver PDF
                       </a>
@@ -278,7 +279,7 @@ export default function Portal() {
                   </div>
                   <div className="data-field">
                     <div className="data-key">Estado</div>
-                    <div className="data-val" style={{color:'#4ade80'}}>Activo</div>
+                    <div className="data-val" style={{ color: '#4ade80' }}>Activo</div>
                   </div>
                   <div className="data-field">
                     <div className="data-key">Temporada</div>
@@ -286,7 +287,7 @@ export default function Portal() {
                   </div>
                   <div className="data-field">
                     <div className="data-key">ID de club</div>
-                    <div className="data-val" style={{fontFamily:'monospace', fontSize:'12px', color:'var(--text2)'}}>{clubId?.slice(0,13)}</div>
+                    <div className="data-val" style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text2)' }}>{clubId?.slice(0, 13)}</div>
                   </div>
                   <div className="data-field">
                     <div className="data-key">Alta en portal</div>
