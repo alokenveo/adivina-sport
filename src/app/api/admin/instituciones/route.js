@@ -19,6 +19,7 @@ export async function PUT(req) {
   const body = await req.json()
   const update = { nombre: body.nombre, descripcion: body.descripcion, activo: body.activo }
   if (body.contrasena) update.contrasena = body.contrasena
+  if (body.logo_url) update.logo_url = body.logo_url
   const { data } = await supabaseAdmin.from('instituciones').update(update).eq('id', body.id).select().single()
   return NextResponse.json(data)
 }

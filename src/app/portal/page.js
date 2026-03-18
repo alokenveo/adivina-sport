@@ -72,7 +72,12 @@ export default function Portal() {
         <span className="topbar-section">Portal Privado de Clubes</span>
         <div className="topbar-right">
           <div className="club-chip">
-            <div className="club-avatar">{initials(clubNombre)}</div>
+            <div className="club-avatar">
+              {clubData?.logo_url
+                ? <img src={clubData.logo_url} alt={clubNombre} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                : initials(clubNombre)
+              }
+            </div>
             <span className="club-name">{clubNombre}</span>
           </div>
           <button className="btn-signout" onClick={cerrarSesion}>
@@ -268,7 +273,12 @@ export default function Portal() {
               </div>
               <div className="club-card">
                 <div className="club-card-header">
-                  <div className="club-logo-big">{initials(clubNombre)}</div>
+                  <div className="club-logo-big">
+                    {clubData?.logo_url
+                      ? <img src={clubData.logo_url} alt={clubNombre} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }} />
+                      : initials(clubNombre)
+                    }
+                  </div>
                   <div className="club-info-big">
                     <div className="name">{clubNombre}</div>
                     <div className="category">{clubData?.descripcion || 'Club deportivo'} · Miembro activo</div>
@@ -397,4 +407,28 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); font
 .data-key { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
 .data-val { font-size: 14px; color: var(--text); font-weight: 500; }
 .empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
+@media (max-width: 768px) {
+  .layout { flex-direction: column; min-height: auto; }
+  .sidebar { width: 100%; flex-direction: row; padding: 8px 0; border-right: none; border-bottom: 1px solid var(--border); overflow-x: auto; flex-wrap: nowrap; }
+  .sidebar-section { margin-top: 0; }
+  .sidebar-label { display: none; }
+  .nav-item { padding: 8px 14px; border-left: none; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .nav-item.active { border-left: none; border-bottom-color: var(--red); background: rgba(232,33,42,0.08); }
+  .main { padding: 20px 16px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .topbar-section { display: none; }
+  .club-chip .club-name { display: none; }
+  .data-grid { grid-template-columns: 1fr; }
+  .data-field:nth-child(even) { border-right: none; }
+  .data-field:nth-last-child(-n+2) { border-bottom: 1px solid var(--border); }
+  .data-field:last-child { border-bottom: none; }
+  .contrato-tag { display: none; }
+}
+
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-value { font-size: 20px; }
+  .page-title { font-size: 18px; }
+  .btn-signout span { display: none; }
+}
 `

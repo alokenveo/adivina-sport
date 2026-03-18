@@ -33,6 +33,10 @@ export default function Admin() {
   const [contFile, setContFile] = useState(null)
   const [contFileName, setContFileName] = useState('Haz clic para subir PDF')
   const contFileRef = useRef()
+  const logoFileRef = useRef()
+  const [logoFile, setLogoFile] = useState(null)
+  const [logoFileName, setLogoFileName] = useState('Haz clic para subir logo')
+  const [logoPreview, setLogoPreview] = useState(null)
 
   // Form anuncio
   const [anunTitulo, setAnunTitulo] = useState('')
@@ -86,18 +90,32 @@ export default function Admin() {
   function openNewInst() {
     setEditingId(null)
     setInstNombre(''); setInstPass(''); setInstDesc(''); setInstEstado('activo')
+    setLogoFile(null); setLogoFileName('Haz clic para subir logo'); setLogoPreview(null)
     setModalInst(true)
   }
 
   function openEditInst(inst) {
     setEditingId(inst.id)
     setInstNombre(inst.nombre); setInstPass(''); setInstDesc(inst.descripcion || ''); setInstEstado(inst.activo ? 'activo' : 'inactivo')
+    setLogoFile(null); setLogoPreview(inst.logo_url || null)
+    setLogoFileName(inst.logo_url ? '✓ Logo actual' : 'Haz clic para subir logo')
     setModalInst(true)
   }
 
   async function saveInst() {
     if (!instNombre) return
     setSaving(true)
+
+    let logoUrl = undefined
+    if (logoFile) {
+      const formData = new FormData()
+      formData.append('file', logoFile)
+      formData.append('institucionId', editingId || 'new-' + Date.now())
+      const res = await fetch('/api/admin/upload-logo', { method: 'POST', body: formData })
+      const data = await res.json()
+      logoUrl = data.url
+    }
+
     await fetch('/api/admin/instituciones', {
       method: editingId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -106,7 +124,8 @@ export default function Admin() {
         nombre: instNombre,
         contrasena: instPass || undefined,
         descripcion: instDesc,
-        activo: instEstado === 'activo'
+        activo: instEstado === 'activo',
+        ...(logoUrl && { logo_url: logoUrl })
       })
     })
     setSaving(false)
@@ -399,6 +418,28 @@ export default function Admin() {
             <div className="form-field"><label className="form-label">Nombre</label><input className="form-input" value={instNombre} onChange={e => setInstNombre(e.target.value)} placeholder="Ej: Nueva Era C.B" /></div>
             <div className="form-field"><label className="form-label">Contraseña de acceso{editingId && ' (dejar vacío para no cambiar)'}</label><input className="form-input" type="password" value={instPass} onChange={e => setInstPass(e.target.value)} placeholder="Contraseña para el portal" /></div>
             <div className="form-field"><label className="form-label">Descripción</label><input className="form-input" value={instDesc} onChange={e => setInstDesc(e.target.value)} placeholder="Ej: Club de baloncesto" /></div>
+            <div className="form-field">
+              <label className="form-label">Logo del club</label>
+              {logoPreview && (
+                <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <img src={logoPreview} alt="Logo actual" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--border2)' }} />
+                  <span style={{ fontSize: '12px', color: 'var(--text2)' }}>Logo actual</span>
+                </div>
+              )}
+              <div className="upload-zone" onClick={() => logoFileRef.current.click()}>
+                <div className="upload-zone-icon">
+                  <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M8 10V3M5 6l3-3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /><path d="M3 13h10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+                </div>
+                <div className="upload-zone-text">{logoFileName}</div>
+              </div>
+              <input ref={logoFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
+                const f = e.target.files[0]
+                if (!f) return
+                setLogoFile(f)
+                setLogoFileName('✓ ' + f.name)
+                setLogoPreview(URL.createObjectURL(f))
+              }} />
+            </div>
             <div className="form-field"><label className="form-label">Estado</label>
               <select className="form-input" value={instEstado} onChange={e => setInstEstado(e.target.value)}>
                 <option value="activo">Activo</option>
@@ -568,4 +609,25 @@ select.form-input { cursor: pointer; }
 .avatar-sm { width: 28px; height: 28px; background: var(--surface3); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--text2); border: 1px solid var(--border); flex-shrink: 0; }
 .cell-with-avatar { display: flex; align-items: center; gap: 9px; }
 .empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
+@media (max-width: 768px) {
+  .layout { flex-direction: column; }
+  .sidebar { width: 100%; flex-direction: row; padding: 8px 0; border-right: none; border-bottom: 1px solid var(--border); overflow-x: auto; flex-shrink: 0; }
+  .sidebar-label { display: none; }
+  .sidebar-section { margin-top: 0; }
+  .nav-item { padding: 8px 12px; border-left: none; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 12px; }
+  .nav-item.active { border-left: none; border-bottom-color: var(--red); }
+  .main { padding: 16px; }
+  .stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat-value { font-size: 20px; }
+  .page-header { flex-wrap: wrap; gap: 10px; }
+  .table-wrap { overflow-x: auto; }
+  table { min-width: 500px; }
+  .form-row { grid-template-columns: 1fr; }
+  .topbar-brand, .topbar-sep, .admin-badge { font-size: 11px; }
+}
+
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: repeat(3, 1fr); }
+  .stat-label { font-size: 9px; }
+}
 `
