@@ -340,7 +340,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); font
 .topbar-section { font-size: 12px; color: var(--text2); letter-spacing: 0.04em; }
 .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 .club-chip { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 20px; padding: 4px 10px 4px 6px; cursor: pointer; }
-.club-avatar { width: 22px; height: 22px; background: var(--surface3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: var(--text2); border: 1px solid var(--border2); }
+.club-avatar { width: 22px; height: 22px; background: var(--surface3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: var(--text2); border: 1px solid var(--border2); overflow: hidden; flex-shrink: 0; }
 .club-name { font-size: 12px; color: var(--text); font-weight: 500; }
 .btn-signout { background: transparent; border: 1px solid var(--border2); color: var(--text2); font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: border-color 0.15s, color 0.15s; }
 .btn-signout:hover { border-color: var(--red); color: var(--red); }
@@ -399,7 +399,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); font
 .anuncio-date { font-size: 11px; color: var(--text3); margin-top: 6px; }
 .club-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
 .club-card-header { background: linear-gradient(135deg, #1a0608 0%, #1e1014 100%); border-bottom: 1px solid var(--border); padding: 24px 20px; display: flex; align-items: center; gap: 16px; }
-.club-logo-big { width: 60px; height: 60px; background: var(--surface3); border-radius: 12px; border: 2px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: var(--text2); }
+.club-logo-big { width: 60px; height: 60px; background: var(--surface3); border-radius: 12px; border: 2px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: var(--text2); overflow: hidden; flex-shrink: 0; }
 .club-info-big .name { font-size: 18px; font-weight: 700; color: var(--text); }
 .club-info-big .category { font-size: 13px; color: var(--red); font-weight: 500; margin-top: 3px; }
 .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
