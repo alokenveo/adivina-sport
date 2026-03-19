@@ -87,7 +87,9 @@ export default function Login() {
             {/* MAIN */}
             <div className="main">
                 <div className="brand">
-                    <div className="logo-box">AS</div>
+                    <div className="logo-box">
+                        <img src="/logo.png" alt="Logo" />
+                    </div>
                     <span className="brand-name">Adivina Sports</span>
                 </div>
 

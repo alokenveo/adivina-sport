@@ -65,7 +65,9 @@ export default function Portal() {
       {/* TOPBAR */}
       <div className="topbar">
         <div className="topbar-logo">
-          <div className="logo-mark">AS</div>
+          <div className="logo-mark">
+            <img src="/logo.png" alt="Logo" />
+          </div>
           <span className="topbar-brand">Adivina Sports</span>
         </div>
         <div className="topbar-sep" />
