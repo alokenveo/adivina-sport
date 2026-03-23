@@ -462,7 +462,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); font
   .topbar { padding: 0 12px; gap: 8px; }
   .topbar-brand { display: none; }
   .topbar-sep { display: none; }
-  /* .topbar-section { display: none; } */
+  .topbar-section { display: none; }
   .topbar-logo { gap: 0; }
   .club-chip { padding: 4px 6px; }
   /* .club-chip .club-name { display: none; } */
