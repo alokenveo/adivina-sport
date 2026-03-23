@@ -422,7 +422,19 @@ export default function Admin() {
               <label className="form-label">Logo del club</label>
               {logoPreview && (
                 <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <img src={logoPreview} alt="Logo actual" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--border2)' }} />
+                  <img
+                    src={logoPreview}
+                    alt="Logo actual"
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '8px',
+                      objectFit: 'contain',
+                      objectPosition: 'center',
+                      border: '1px solid var(--border2)',
+                      background: 'var(--surface3)'
+                    }}
+                  />
                   <span style={{ fontSize: '12px', color: 'var(--text2)' }}>Logo actual</span>
                 </div>
               )}
