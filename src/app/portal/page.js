@@ -96,7 +96,7 @@ export default function Portal() {
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
               <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Cerrar sesión
+            <span className="btn-signout-text">Cerrar sesión</span>
           </button>
         </div>
       </div>
@@ -138,7 +138,7 @@ export default function Portal() {
                 </svg>
               </span>
               Anuncios
-              {anunciosNuevos > 0 && <span className="nav-badge">{anunciosNuevos}</span>}
+              {/*anunciosNuevos > 0 && <span className="nav-badge">{anunciosNuevos}</span>*/}
             </div>
           </div>
 
@@ -458,27 +458,79 @@ body { background: var(--bg); color: var(--text); font-family: var(--font); font
 .data-val { font-size: 14px; color: var(--text); font-weight: 500; }
 .empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
 @media (max-width: 768px) {
+  /* TOPBAR */
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar-brand { display: none; }
+  .topbar-sep { display: none; }
+  /* .topbar-section { display: none; } */
+  .topbar-logo { gap: 0; }
+  .club-chip { padding: 4px 6px; }
+  /* .club-chip .club-name { display: none; } */
+  .btn-signout { padding: 6px 8px; min-width: 32px; justify-content: center; }
+  .btn-signout svg { width: 15px; height: 15px; }
+  .btn-signout-text { display: none; }
+
+  /* LAYOUT */
   .layout { flex-direction: column; min-height: auto; }
-  .sidebar { width: 100%; flex-direction: row; padding: 8px 0; border-right: none; border-bottom: 1px solid var(--border); overflow-x: auto; flex-wrap: nowrap; }
-  .sidebar-section { margin-top: 0; }
+
+  /* SIDEBAR HORIZONTAL — solo iconos */
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    padding: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-x: visible;
+    flex-wrap: nowrap;
+    height: 48px;
+    align-items: stretch;
+    justify-content: space-around;
+  }
   .sidebar-label { display: none; }
-  .nav-item { padding: 8px 14px; border-left: none; border-bottom: 2px solid transparent; white-space: nowrap; }
-  .nav-item.active { border-left: none; border-bottom-color: var(--red); background: rgba(232,33,42,0.08); }
-  .main { padding: 20px 16px; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
-  .topbar-section { display: none; }
-  .club-chip .club-name { display: none; }
+  .sidebar-section { margin-top: 0; display: contents; }
+  .nav-item {
+    flex: 1;
+    flex-direction: column;
+    padding: 6px 4px;
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    border-top: none;
+    white-space: nowrap;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    font-size: 9px;
+    color: var(--text3);
+  }
+  .nav-item.active {
+    border-left: none;
+    border-bottom-color: var(--red);
+    background: rgba(232,33,42,0.06);
+    color: var(--text);
+  }
+  .nav-item .nav-icon {
+    opacity: 1;
+    width: 18px;
+    height: 18px;
+  }
+  .nav-item .nav-icon svg { width: 18px; height: 18px; }
+  .nav-badge { margin-left: 0; margin-top: 0; padding: 0px 4px; font-size: 9px; }
+
+  /* MAIN */
+  .main { padding: 16px 14px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .page-title { font-size: 18px; }
   .data-grid { grid-template-columns: 1fr; }
   .data-field:nth-child(even) { border-right: none; }
   .data-field:nth-last-child(-n+2) { border-bottom: 1px solid var(--border); }
   .data-field:last-child { border-bottom: none; }
   .contrato-tag { display: none; }
+  .contrato-item { flex-wrap: wrap; }
 }
 
 @media (max-width: 480px) {
   .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
   .stat-value { font-size: 20px; }
-  .page-title { font-size: 18px; }
-  .btn-signout span { display: none; }
 }
 `

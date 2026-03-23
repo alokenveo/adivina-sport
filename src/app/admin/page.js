@@ -236,7 +236,9 @@ export default function Admin() {
 
       {/* TOPBAR */}
       <div className="topbar">
-        <div className="logo-mark">AS</div>
+        <div className="logo-mark">
+          <img src="/logo.png" alt="Logo" />
+        </div>
         <span className="topbar-brand">Adivina Sports</span>
         <div className="topbar-sep" />
         <span className="admin-badge">Panel Admin</span>
@@ -246,8 +248,10 @@ export default function Admin() {
             document.cookie = 'isAdmin=; path=/; max-age=0'
             router.push('/login')
           }}>
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            Salir
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="btn-out-text">Salir</span>
           </button>
         </div>
       </div>
@@ -259,7 +263,7 @@ export default function Admin() {
           <div className={`nav-item ${seccion === 'instituciones' ? 'active' : ''}`} onClick={() => setSeccion('instituciones')}>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.4" /><path d="M2 14c0-3 2.686-4.5 6-4.5s6 1.5 6 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
             Instituciones
-            <span className="nav-count">{instituciones.length}</span>
+            {/*<span className="nav-count">{instituciones.length}</span>*/}
           </div>
 
           <div className="sidebar-section">
@@ -267,12 +271,12 @@ export default function Admin() {
             <div className={`nav-item ${seccion === 'contratos' ? 'active' : ''}`} onClick={() => setSeccion('contratos')}>
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V5l-4-4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /><path d="M10 1v4h4" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /></svg>
               Contratos
-              <span className="nav-count">{contratos.length}</span>
+              {/*<span className="nav-count">{contratos.length}</span>*/}
             </div>
             <div className={`nav-item ${seccion === 'anuncios' ? 'active' : ''}`} onClick={() => setSeccion('anuncios')}>
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 3H3a1 1 0 00-1 1v6a1 1 0 001 1h2v2.5l3-2.5h5a1 1 0 001-1V4a1 1 0 00-1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /></svg>
               Anuncios
-              <span className="nav-count">{anuncios.length}</span>
+              {/*<span className="nav-count">{anuncios.length}</span>*/}
             </div>
           </div>
         </nav>
@@ -622,24 +626,71 @@ select.form-input { cursor: pointer; }
 .cell-with-avatar { display: flex; align-items: center; gap: 9px; }
 .empty { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
 @media (max-width: 768px) {
+  /* TOPBAR */
+  .topbar { padding: 0 12px; gap: 8px; height: 48px; }
+  .topbar-brand { display: none; }
+  .topbar-sep { display: none; }
+  /* .admin-badge { display: none; } */
+  .topbar-right { gap: 8px; margin-left: 25px}
+  /* .topbar-right span { display: none; } */
+  .btn-out { padding: 6px 8px; min-width: 32px; justify-content: center; }
+  .btn-out-text { display: none; }
+
+  /* LAYOUT */
   .layout { flex-direction: column; }
-  .sidebar { width: 100%; flex-direction: row; padding: 8px 0; border-right: none; border-bottom: 1px solid var(--border); overflow-x: auto; flex-shrink: 0; }
+
+  /* SIDEBAR HORIZONTAL — solo iconos */
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    padding: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-x: visible;
+    flex-wrap: nowrap;
+    height: 48px;
+    align-items: stretch;
+    justify-content: space-around;
+    flex-shrink: 0;
+  }
   .sidebar-label { display: none; }
-  .sidebar-section { margin-top: 0; }
-  .nav-item { padding: 8px 12px; border-left: none; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 12px; }
-  .nav-item.active { border-left: none; border-bottom-color: var(--red); }
-  .main { padding: 16px; }
+  .sidebar-section { margin-top: 0; display: contents; }
+  .nav-item {
+    flex: 1;
+    flex-direction: column;
+    padding: 6px 4px;
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    font-size: 9px;
+    color: var(--text3);
+  }
+  .nav-item.active {
+    border-left: none;
+    border-bottom-color: var(--red);
+    background: rgba(232,33,42,0.06);
+    color: var(--text);
+  }
+  .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .nav-count { margin-left: 0; padding: 0px 4px; font-size: 9px; }
+
+  /* MAIN */
+  .main { padding: 14px; }
   .stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .stat-value { font-size: 20px; }
   .page-header { flex-wrap: wrap; gap: 10px; }
   .table-wrap { overflow-x: auto; }
-  table { min-width: 500px; }
+  table { min-width: 460px; }
   .form-row { grid-template-columns: 1fr; }
-  .topbar-brand, .topbar-sep, .admin-badge { font-size: 11px; }
 }
 
 @media (max-width: 480px) {
   .stats-row { grid-template-columns: repeat(3, 1fr); }
   .stat-label { font-size: 9px; }
+  .logo-mark { width: 22px; height: 22px; font-size: 9px; }
 }
 `
