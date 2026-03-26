@@ -1,0 +1,146 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect, createContext, useContext } from "react";
+import Landing from "@/pages/Landing";
+import MemberLogin from "@/pages/MemberLogin";
+import ClubDashboard from "@/pages/ClubDashboard";
+import ClubContracts from "@/pages/ClubContracts";
+import ClubPoints from "@/pages/ClubPoints";
+import KitDesign from "@/pages/KitDesign";
+import ClubRequests from "@/pages/ClubRequests";
+import ClubInvoices from "@/pages/ClubInvoices";
+import ClubProfile from "@/pages/ClubProfile";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminDashboard from "@/pages/AdminDashboard";
+import { Toaster } from "@/components/ui/sonner";
+import "@/App.css";
+
+const AuthContext = createContext(null);
+
+export const useAuth = () => useContext(AuthContext);
+
+const ProtectedRoute = ({ children, requireAdmin = false }) => {
+  const { user, admin } = useAuth();
+  
+  if (requireAdmin) {
+    return admin ? children : <Navigate to="/admin/login" replace />;
+  }
+  
+  return user ? children : <Navigate to="/member-club" replace />;
+};
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [admin, setAdmin] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('club_user');
+    const storedAdmin = localStorage.getItem('admin_user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    if (storedAdmin) {
+      setAdmin(JSON.parse(storedAdmin));
+    }
+  }, []);
+
+  const login = (userData) => {
+    setUser(userData);
+    localStorage.setItem('club_user', JSON.stringify(userData));
+  };
+
+  const adminLogin = (adminData) => {
+    setAdmin(adminData);
+    localStorage.setItem('admin_user', JSON.stringify(adminData));
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('club_user');
+  };
+
+  const adminLogout = () => {
+    setAdmin(null);
+    localStorage.removeItem('admin_user');
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, admin, login, logout, adminLogin, adminLogout }}>
+      <div className="App min-h-screen bg-[#050505]">
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/member-club" element={<MemberLogin />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/club/dashboard"
+              element={
+                <ProtectedRoute>
+                  <ClubDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/club/contracts"
+              element={
+                <ProtectedRoute>
+                  <ClubContracts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/club/points"
+              element={
+                <ProtectedRoute>
+                  <ClubPoints />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/club/kit-design"
+              element={
+                <ProtectedRoute>
+                  <KitDesign />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/club/requests"
+              element={
+                <ProtectedRoute>
+                  <ClubRequests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/club/invoices"
+              element={
+                <ProtectedRoute>
+                  <ClubInvoices />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/club/profile"
+              element={
+                <ProtectedRoute>
+                  <ClubProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+        <Toaster position="top-right" />
+      </div>
+    </AuthContext.Provider>
+  );
+}
+
+export default App;
