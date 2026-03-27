@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "@/App";
 import ClubLayout from "@/components/ClubLayout";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -143,8 +142,9 @@ const ClubContracts = () => {
                           <p className="text-xs text-zinc-500">Archivo PDF disponible para descarga</p>
                         </div>
                       </div>
+                      {/* ✅ FIX: contract.file_url ya es la URL firmada completa de Supabase */}
                       <Button
-                        onClick={() => window.open(`${BACKEND_URL}${contract.file_url}`, '_blank')}
+                        onClick={() => window.open(contract.file_url, '_blank')}
                         className="bg-[#DFFF00] text-black hover:bg-white w-full sm:w-auto shrink-0"
                       >
                         <Download className="mr-2 h-4 w-4" />
