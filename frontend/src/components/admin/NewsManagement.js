@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -17,9 +17,7 @@ const NewsManagement = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [formData, setFormData] = useState({ title: "", content: "", priority: "normal" });
 
-  useEffect(() => {
-    fetchNews();
-  }, []);
+  useEffect(() => { fetchNews(); }, []);
 
   const fetchNews = async () => {
     try {
@@ -56,14 +54,14 @@ const NewsManagement = () => {
   return (
     <Card className="bg-[#121212] border-white/10">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="min-w-0">
             <CardTitle className="text-2xl">Gestión de Noticias</CardTitle>
             <CardDescription className="text-zinc-400">Publica anuncios para todos los clubes</CardDescription>
           </div>
           <Dialog open={showDialog} onOpenChange={setShowDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-[#DFFF00] text-black hover:bg-white">
+              <Button className="bg-[#DFFF00] text-black hover:bg-white w-full sm:w-auto shrink-0">
                 <Plus className="mr-2 h-4 w-4" />Nueva Noticia
               </Button>
             </DialogTrigger>
@@ -102,9 +100,9 @@ const NewsManagement = () => {
         <div className="space-y-4">
           {news.map((item) => (
             <div key={item.id} className="p-4 bg-[#1E1E1E] border border-white/5 rounded-lg">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-[#DFFF00]">{item.title}</h3>
-                <Button onClick={() => handleDelete(item.id)} size="icon" variant="ghost" className="text-red-400"><Trash2 className="h-4 w-4" /></Button>
+              <div className="flex justify-between items-start mb-2 gap-2">
+                <h3 className="font-bold text-[#DFFF00] min-w-0 break-words">{item.title}</h3>
+                <Button onClick={() => handleDelete(item.id)} size="icon" variant="ghost" className="text-red-400 shrink-0"><Trash2 className="h-4 w-4" /></Button>
               </div>
               <p className="text-zinc-400 text-sm mb-2">{item.content}</p>
               <div className="flex items-center gap-2">

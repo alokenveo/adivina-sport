@@ -16,9 +16,7 @@ const DashboardContentManagement = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [formData, setFormData] = useState({ section_title: "", content: "", order: 0 });
 
-  useEffect(() => {
-    fetchContent();
-  }, []);
+  useEffect(() => { fetchContent(); }, []);
 
   const fetchContent = async () => {
     try {
@@ -55,14 +53,14 @@ const DashboardContentManagement = () => {
   return (
     <Card className="bg-[#121212] border-white/10">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="min-w-0">
             <CardTitle className="text-2xl">Contenido del Dashboard</CardTitle>
             <CardDescription className="text-zinc-400">Edita lo que ven los clubes en su panel principal</CardDescription>
           </div>
           <Dialog open={showDialog} onOpenChange={setShowDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-[#DFFF00] text-black hover:bg-white">
+              <Button className="bg-[#DFFF00] text-black hover:bg-white w-full sm:w-auto shrink-0">
                 <Plus className="mr-2 h-4 w-4" />Agregar Sección
               </Button>
             </DialogTrigger>
@@ -93,9 +91,9 @@ const DashboardContentManagement = () => {
         <div className="grid md:grid-cols-2 gap-4">
           {content.map((item) => (
             <div key={item.id} className="p-4 bg-[#1E1E1E] rounded-lg border border-white/5">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-[#DFFF00]">{item.section_title}</h3>
-                <Button onClick={() => handleDelete(item.id)} size="icon" variant="ghost" className="text-red-400"><Trash2 className="h-4 w-4" /></Button>
+              <div className="flex justify-between items-start mb-2 gap-2">
+                <h3 className="font-bold text-[#DFFF00] min-w-0 break-words">{item.section_title}</h3>
+                <Button onClick={() => handleDelete(item.id)} size="icon" variant="ghost" className="text-red-400 shrink-0"><Trash2 className="h-4 w-4" /></Button>
               </div>
               <p className="text-sm text-zinc-400">{item.content}</p>
               <p className="text-xs text-zinc-600 mt-2">Orden: {item.order}</p>
