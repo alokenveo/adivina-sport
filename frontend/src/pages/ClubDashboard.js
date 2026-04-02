@@ -280,7 +280,7 @@ const ClubDashboard = () => {
                           <div className="relative mb-3">
                             {player.photo_url ? (
                               <img 
-                                src={`${BACKEND_URL}${player.photo_url}`}
+                                src={player.photo_url}
                                 alt={player.name}
                                 className="w-16 h-16 rounded-full object-cover border-2"
                                 style={{ borderColor: player.contract_color }}
