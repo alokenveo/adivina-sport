@@ -12,6 +12,7 @@ import ClubProfile from "@/pages/ClubProfile";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import { Toaster } from "@/components/ui/sonner";
+import ClubOrders from "@/pages/ClubOrders";
 import "@/App.css";
 
 const AuthContext = createContext(null);
@@ -20,11 +21,11 @@ export const useAuth = () => useContext(AuthContext);
 
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
   const { user, admin } = useAuth();
-  
+
   if (requireAdmin) {
     return admin ? children : <Navigate to="/admin/login" replace />;
   }
-  
+
   return user ? children : <Navigate to="/member-club" replace />;
 };
 
@@ -132,6 +133,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ClubProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/club/orders"
+              element={
+                <ProtectedRoute>
+                  <ClubOrders />
                 </ProtectedRoute>
               }
             />

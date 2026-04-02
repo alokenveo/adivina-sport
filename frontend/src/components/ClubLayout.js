@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { Menu, Home, FileText, Package, Trophy, Palette, LogOut, Receipt, Users } from "lucide-react";
+import { Menu, Home, FileText, Package, Trophy, Palette, LogOut, Receipt, Users, ShoppingBag } from "lucide-react";
 
 const ClubLayout = ({ children, title }) => {
   const navigate = useNavigate();
@@ -18,7 +18,8 @@ const ClubLayout = ({ children, title }) => {
     { icon: Receipt, label: "Facturas", path: "/club/invoices" },
     { icon: Trophy, label: "Sistema de Puntos", path: "/club/points" },
     { icon: Palette, label: "Diseño de Kit", path: "/club/kit-design" },
-    { icon: Package, label: "Solicitudes", path: "/club/requests" }
+    { icon: Package, label: "Solicitudes", path: "/club/requests" },
+    { icon: ShoppingBag, label: "Mis Pedidos", path: "/club/orders" }
   ];
 
   const handleLogout = () => {

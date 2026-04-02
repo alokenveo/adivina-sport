@@ -16,6 +16,7 @@ import ClubProfileEditor from "@/components/admin/ClubProfileEditor";
 import MemberTierSystem from "@/components/admin/MemberTierSystem";
 import PointsRulesEngine from "@/components/admin/PointsRulesEngine";
 import ResetManagement from "@/components/admin/ResetManagement";
+import OrdersManagement from "@/components/admin/OrdersManagement";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -117,6 +118,7 @@ const AdminDashboard = () => {
             <PointsRulesEngine />
             <KitDesignsManagement />
             <RequestsManagement />
+            <OrdersManagement />
           </TabsContent>
 
           <TabsContent value="reset">
