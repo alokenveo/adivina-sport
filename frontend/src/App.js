@@ -9,7 +9,6 @@ import KitDesign from "@/pages/KitDesign";
 import ClubRequests from "@/pages/ClubRequests";
 import ClubInvoices from "@/pages/ClubInvoices";
 import ClubProfile from "@/pages/ClubProfile";
-import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import { Toaster } from "@/components/ui/sonner";
 import ClubOrders from "@/pages/ClubOrders";
@@ -19,11 +18,15 @@ const AuthContext = createContext(null);
 
 export const useAuth = () => useContext(AuthContext);
 
+// ProtectedRoute espera a que se haya cargado el estado antes de redirigir
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
-  const { user, admin } = useAuth();
+  const { user, admin, authLoaded } = useAuth();
+
+  // Mientras no se haya leído localStorage, no redirigir
+  if (!authLoaded) return null;
 
   if (requireAdmin) {
-    return admin ? children : <Navigate to="/admin/login" replace />;
+    return admin ? children : <Navigate to="/member-club" replace />;
   }
 
   return user ? children : <Navigate to="/member-club" replace />;
@@ -32,46 +35,52 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
 function App() {
   const [user, setUser] = useState(null);
   const [admin, setAdmin] = useState(null);
+  // Flag: ya se leyó localStorage
+  const [authLoaded, setAuthLoaded] = useState(false);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('club_user');
-    const storedAdmin = localStorage.getItem('admin_user');
+    const storedUser = localStorage.getItem("club_user");
+    const storedAdmin = localStorage.getItem("admin_user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try { setUser(JSON.parse(storedUser)); } catch { }
     }
     if (storedAdmin) {
-      setAdmin(JSON.parse(storedAdmin));
+      try { setAdmin(JSON.parse(storedAdmin)); } catch { }
     }
+    setAuthLoaded(true);
   }, []);
 
   const login = (userData) => {
     setUser(userData);
-    localStorage.setItem('club_user', JSON.stringify(userData));
+    localStorage.setItem("club_user", JSON.stringify(userData));
   };
 
   const adminLogin = (adminData) => {
     setAdmin(adminData);
-    localStorage.setItem('admin_user', JSON.stringify(adminData));
+    localStorage.setItem("admin_user", JSON.stringify(adminData));
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('club_user');
+    localStorage.removeItem("club_user");
   };
 
+  // Al cerrar sesión de admin volvemos al login de miembros (no a /admin/login)
   const adminLogout = () => {
     setAdmin(null);
-    localStorage.removeItem('admin_user');
+    localStorage.removeItem("admin_user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, admin, login, logout, adminLogin, adminLogout }}>
+    <AuthContext.Provider value={{ user, admin, login, logout, adminLogin, adminLogout, authLoaded }}>
       <div className="App min-h-screen bg-[#050505]">
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/member-club" element={<MemberLogin />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
+
+            <Route path="/admin/login" element={<Navigate to="/member-club" replace />} />
+
             <Route
               path="/admin/dashboard"
               element={

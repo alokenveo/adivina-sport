@@ -25,7 +25,7 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     adminLogout();
-    navigate('/');
+    navigate("/member-club");
   };
 
   return (
@@ -33,7 +33,6 @@ const AdminDashboard = () => {
       {/* ── Header ── */}
       <header className="border-b border-white/10 bg-[#050505]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
-          {/* Left: icon + title */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <div className="w-9 h-9 sm:w-12 sm:h-12 bg-[#DFFF00] rounded-full flex items-center justify-center shrink-0">
               <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-black" />
@@ -44,12 +43,10 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Right: welcome + logout */}
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <span className="text-xs sm:text-sm text-zinc-400 hidden sm:block">
               Bienvenido, {admin?.username}
             </span>
-            {/* Mobile: icon-only button */}
             <Button
               data-testid="admin-logout-button"
               onClick={handleLogout}
@@ -60,7 +57,6 @@ const AdminDashboard = () => {
             >
               <LogOut className="h-4 w-4" />
             </Button>
-            {/* Desktop: full button */}
             <Button
               onClick={handleLogout}
               variant="outline"
@@ -76,7 +72,6 @@ const AdminDashboard = () => {
       {/* ── Main ── */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* Nav tabs — icons only on mobile, icons+labels on desktop */}
           <TabsList className="grid grid-cols-6 gap-1 bg-[#121212] p-1 h-auto w-full">
             {[
               { value: "clubs",      Icon: Users,         label: "Clubes"      },
@@ -96,7 +91,6 @@ const AdminDashboard = () => {
                   }`}
               >
                 <Icon className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
-                {/* Hide label on very small screens */}
                 <span className="hidden xs:inline sm:inline leading-none">{label}</span>
               </TabsTrigger>
             ))}
