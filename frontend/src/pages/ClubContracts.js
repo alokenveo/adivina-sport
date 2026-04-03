@@ -43,19 +43,19 @@ const ClubContracts = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'active':   return 'bg-green-500/20 text-green-400 border-green-500/50';
-      case 'expired':  return 'bg-red-500/20 text-red-400 border-red-500/50';
+      case 'active': return 'bg-green-500/20 text-green-400 border-green-500/50';
+      case 'expired': return 'bg-red-500/20 text-red-400 border-red-500/50';
       case 'upcoming': return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
-      default:         return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
     }
   };
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'active':   return 'ACTIVO';
-      case 'expired':  return 'EXPIRADO';
+      case 'active': return 'ACTIVO';
+      case 'expired': return 'EXPIRADO';
       case 'upcoming': return 'PRÓXIMO';
-      default:         return status.toUpperCase();
+      default: return status.toUpperCase();
     }
   };
 
@@ -95,10 +95,9 @@ const ClubContracts = () => {
                           {getStatusLabel(status)}
                         </Badge>
                       </div>
-                      <p className="text-zinc-400 text-sm">{contract.description}</p>
-                    </div>
-                    <div className="sm:text-right">
-                      <p className="text-3xl font-bold text-[#DFFF00]">${contract.value.toLocaleString('es-ES')}</p>
+                      {contract.description && (
+                        <p className="text-zinc-400 text-sm">{contract.description}</p>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -142,7 +141,6 @@ const ClubContracts = () => {
                           <p className="text-xs text-zinc-500">Archivo PDF disponible para descarga</p>
                         </div>
                       </div>
-                      {/* ✅ FIX: contract.file_url ya es la URL firmada completa de Supabase */}
                       <Button
                         onClick={() => window.open(contract.file_url, '_blank')}
                         className="bg-[#DFFF00] text-black hover:bg-white w-full sm:w-auto shrink-0"

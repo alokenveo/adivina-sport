@@ -21,7 +21,6 @@ const ContractsManagement = () => {
     description: "",
     start_date: "",
     end_date: "",
-    value: ""
   });
 
   const fetchClubs = useCallback(async () => {
@@ -55,19 +54,13 @@ const ContractsManagement = () => {
     formData.append('description', form.description);
     formData.append('start_date', form.start_date);
     formData.append('end_date', form.end_date);
-    formData.append('value', form.value || '0');
+    formData.append('value', '0'); // enviamos 0 para no romper la API
 
     try {
       await axios.post(`${BACKEND_URL}/api/admin/contracts/${selectedClub}`, formData);
       toast.success('Contrato creado correctamente');
       setFile(null);
-      setForm({
-        title: "",
-        description: "",
-        start_date: "",
-        end_date: "",
-        value: ""
-      });
+      setForm({ title: "", description: "", start_date: "", end_date: "" });
       fetchContracts();
     } catch (error) {
       toast.error('Error al subir contrato');
@@ -111,27 +104,17 @@ const ContractsManagement = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label>Titulo del Contrato *</Label>
-                <Input
-                  value={form.title}
-                  onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
-                  className="mt-2 bg-[#0A0A0A] border-white/10"
-                  placeholder="Ej: Contrato Temporada 2026"
-                />
-              </div>
-              <div>
-                <Label>Valor (XAF)</Label>
-                <Input
-                  type="number"
-                  value={form.value}
-                  onChange={(e) => setForm(prev => ({ ...prev, value: e.target.value }))}
-                  className="mt-2 bg-[#0A0A0A] border-white/10"
-                  placeholder="25000"
-                />
-              </div>
+
+            <div>
+              <Label>Titulo del Contrato *</Label>
+              <Input
+                value={form.title}
+                onChange={(e) => setForm(prev => ({ ...prev, title: e.target.value }))}
+                className="mt-2 bg-[#0A0A0A] border-white/10"
+                placeholder="Ej: Contrato Temporada 2026"
+              />
             </div>
+
             <div>
               <Label>Descripcion</Label>
               <Input
@@ -141,6 +124,7 @@ const ContractsManagement = () => {
                 placeholder="Descripcion breve del contrato"
               />
             </div>
+
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label>Fecha de Inicio *</Label>
@@ -161,6 +145,7 @@ const ContractsManagement = () => {
                 />
               </div>
             </div>
+
             <div>
               <Label>Archivo PDF *</Label>
               <Input
@@ -170,6 +155,7 @@ const ContractsManagement = () => {
                 className="mt-2 bg-[#0A0A0A] border-white/10"
               />
             </div>
+
             <Button type="submit" className="bg-[#DFFF00] text-black hover:bg-white">
               <Upload className="mr-2 h-4 w-4" />Subir Contrato
             </Button>
@@ -188,7 +174,6 @@ const ContractsManagement = () => {
                     <TableHead className="text-zinc-400">TITULO</TableHead>
                     <TableHead className="text-zinc-400">INICIO</TableHead>
                     <TableHead className="text-zinc-400">FIN</TableHead>
-                    <TableHead className="text-zinc-400">VALOR</TableHead>
                     <TableHead className="text-zinc-400">PDF</TableHead>
                     <TableHead className="text-zinc-400">ACCIONES</TableHead>
                   </TableRow>
@@ -199,13 +184,10 @@ const ContractsManagement = () => {
                       <TableCell className="font-medium">{contract.title}</TableCell>
                       <TableCell className="text-zinc-400">{contract.start_date}</TableCell>
                       <TableCell className="text-zinc-400">{contract.end_date}</TableCell>
-                      <TableCell className="text-[#DFFF00]">
-                        {contract.value ? `${new Intl.NumberFormat('es-ES').format(contract.value)} XAF` : '-'}
-                      </TableCell>
                       <TableCell>
                         {contract.file_url ? (
                           <a
-                            href={`${BACKEND_URL}${contract.file_url}`}
+                            href={contract.file_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 text-green-400 hover:underline"

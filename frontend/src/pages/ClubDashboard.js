@@ -23,9 +23,13 @@ const ClubDashboard = () => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Carousel: índice de inicio de la ventana visible
-  const [carouselStart, setCarouselStart] = useState(0);
-  const VISIBLE = 4; // jugadores visibles a la vez
+  // Carousel state
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const carouselRef = useRef(null);
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+  const isDragging = useRef(false);
+  const autoPlayRef = useRef(null);
 
   const fetchData = useCallback(async () => {
     if (!user?.club_id) return;
@@ -37,10 +41,10 @@ const ClubDashboard = () => {
         axios.get(`${BACKEND_URL}/api/dashboard-content`),
         axios.get(`${BACKEND_URL}/api/member-tiers`).catch(() => ({
           data: [
-            { id: "silver",  name: "Silver",  min_points: 0,    color: "#C0C0C0" },
-            { id: "gold",    name: "Gold",    min_points: 1000, color: "#FFD700" },
+            { id: "silver", name: "Silver", min_points: 0, color: "#C0C0C0" },
+            { id: "gold", name: "Gold", min_points: 1000, color: "#FFD700" },
             { id: "premium", name: "Premium", min_points: 2500, color: "#E5E4E2" },
-            { id: "elite",   name: "Elite",   min_points: 5000, color: "#DFFF00" },
+            { id: "elite", name: "Elite", min_points: 5000, color: "#DFFF00" },
           ],
         })),
         axios.get(`${BACKEND_URL}/api/club/profile/${user.club_id}`),
@@ -67,20 +71,52 @@ const ClubDashboard = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Auto-avance del carousel
-  useEffect(() => {
-    if (players.length <= VISIBLE) return;
-    const id = setInterval(() => {
-      setCarouselStart((prev) => (prev + 1) % players.length);
+  // Auto-play carousel
+  const startAutoPlay = useCallback(() => {
+    if (autoPlayRef.current) clearInterval(autoPlayRef.current);
+    autoPlayRef.current = setInterval(() => {
+      setCarouselIndex((prev) => (prev + 1) % Math.max(players.length, 1));
     }, 3000);
-    return () => clearInterval(id);
   }, [players.length]);
 
-  const scrollLeft = () =>
-    setCarouselStart((prev) => (prev - 1 + players.length) % players.length);
+  useEffect(() => {
+    if (players.length <= 1) return;
+    startAutoPlay();
+    return () => clearInterval(autoPlayRef.current);
+  }, [players.length, startAutoPlay]);
 
-  const scrollRight = () =>
-    setCarouselStart((prev) => (prev + 1) % players.length);
+  const goTo = (idx) => {
+    setCarouselIndex((idx + players.length) % players.length);
+    // Reiniciar auto-play al navegar manualmente
+    startAutoPlay();
+  };
+
+  // Touch handlers para swipe
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isDragging.current = false;
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStartX.current === null) return;
+    const dx = Math.abs(e.touches[0].clientX - touchStartX.current);
+    const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
+    if (dx > dy && dx > 8) {
+      isDragging.current = true;
+      e.preventDefault(); // evitar scroll vertical accidental
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!isDragging.current || touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 40) {
+      dx < 0 ? goTo(carouselIndex + 1) : goTo(carouselIndex - 1);
+    }
+    touchStartX.current = null;
+    isDragging.current = false;
+  };
 
   const getProgressToNextTier = () => {
     if (!memberTier || !nextTier) return 100;
@@ -96,17 +132,14 @@ const ClubDashboard = () => {
     return `${(days / 365).toFixed(1)}a`;
   };
 
-  // Jugadores visibles: ventana deslizante con wrap-around
-  const visiblePlayers = players.length === 0
-    ? []
-    : Array.from({ length: Math.min(VISIBLE, players.length) }, (_, i) =>
-        players[(carouselStart + i) % players.length]
-      );
-
   const directiva = profile?.directiva || {};
   const hasDirectiva =
     directiva.president || directiva.vice_president || directiva.secretary ||
     directiva.technical_director || directiva.owner || directiva.founder;
+
+  // Número de cards visibles según ancho — usamos CSS para esto
+  // En JS solo controlamos el índice central
+  const CARD_WIDTH = 140; // px aprox por card en móvil
 
   return (
     <ClubLayout title="Panel Principal">
@@ -242,17 +275,17 @@ const ClubDashboard = () => {
                     <Users className="h-5 w-5 text-[#DFFF00]" />
                     Plantilla ({players.length} jugadores)
                   </CardTitle>
-                  {players.length > VISIBLE && (
+                  {players.length > 1 && (
                     <div className="flex gap-2">
                       <button
-                        onClick={scrollLeft}
+                        onClick={() => goTo(carouselIndex - 1)}
                         className="p-1 rounded-full bg-white/5 hover:bg-white/15 transition-colors"
                         aria-label="Anterior"
                       >
                         <ChevronLeft className="h-5 w-5" />
                       </button>
                       <button
-                        onClick={scrollRight}
+                        onClick={() => goTo(carouselIndex + 1)}
                         className="p-1 rounded-full bg-white/5 hover:bg-white/15 transition-colors"
                         aria-label="Siguiente"
                       >
@@ -263,65 +296,97 @@ const ClubDashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                {/* Grid responsivo: muestra todos los visibles sin scroll CSS oculto */}
-                <div className="grid gap-3"
-                  style={{
-                    gridTemplateColumns: `repeat(${Math.min(VISIBLE, players.length)}, minmax(0, 1fr))`,
-                  }}
+                {/* 
+                  Carrusel: overflow hidden + flex con translateX animado.
+                  En desktop mostramos 4 cards; en móvil el ancho de cada card
+                  es ~72% del contenedor para que se vea el borde del siguiente.
+                */}
+                <div
+                  className="relative overflow-hidden select-none"
+                  ref={carouselRef}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
                 >
-                  {visiblePlayers.map((player, index) => (
-                    <div
-                      key={`${player.id}-${index}`}
-                      className="p-3 bg-[#1E1E1E] rounded-lg border border-white/5 hover:border-[#DFFF00]/30 transition-all"
-                    >
-                      <div className="flex flex-col items-center text-center gap-2">
-                        <div className="relative">
-                          {player.photo_url ? (
-                            <img
-                              src={player.photo_url}
-                              alt={player.name}
-                              className="w-14 h-14 rounded-full object-cover border-2"
-                              style={{ borderColor: player.contract_color }}
-                            />
-                          ) : (
-                            <div
-                              className="w-14 h-14 rounded-full bg-[#0A0A0A] flex items-center justify-center border-2"
-                              style={{ borderColor: player.contract_color }}
-                            >
-                              <User className="h-7 w-7 text-zinc-600" />
+                  <div
+                    className="flex transition-transform duration-400 ease-in-out"
+                    style={{
+                      // En móvil cada card ocupa ~72vw, en desktop 25% del contenedor (4 cards)
+                      transform: `translateX(calc(-${carouselIndex} * var(--card-w)))`,
+                      "--card-w": "25%",
+                    }}
+                  >
+                    {players.map((player, index) => (
+                      <div
+                        key={player.id}
+                        className="flex-shrink-0 px-1.5"
+                        style={{ width: "var(--card-w)" }}
+                      >
+                        <div className="p-3 bg-[#1E1E1E] rounded-lg border border-white/5 hover:border-[#DFFF00]/30 transition-all">
+                          <div className="flex flex-col items-center text-center gap-2">
+                            <div className="relative">
+                              {player.photo_url ? (
+                                <img
+                                  src={player.photo_url}
+                                  alt={player.name}
+                                  className="w-14 h-14 rounded-full object-cover border-2"
+                                  style={{ borderColor: player.contract_color }}
+                                />
+                              ) : (
+                                <div
+                                  className="w-14 h-14 rounded-full bg-[#0A0A0A] flex items-center justify-center border-2"
+                                  style={{ borderColor: player.contract_color }}
+                                >
+                                  <User className="h-7 w-7 text-zinc-600" />
+                                </div>
+                              )}
+                              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#DFFF00] flex items-center justify-center text-black font-bold text-xs">
+                                {player.number}
+                              </div>
                             </div>
-                          )}
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#DFFF00] flex items-center justify-center text-black font-bold text-xs">
-                            {player.number}
-                          </div>
-                        </div>
-                        <div className="min-w-0 w-full">
-                          <p className="font-bold text-sm truncate">{player.name}</p>
-                          <p className="text-xs text-zinc-400">{player.position}</p>
-                          <div className="flex items-center gap-1 justify-center mt-1">
-                            <Clock className="h-3 w-3 flex-shrink-0" style={{ color: player.contract_color }} />
-                            <span className="text-xs" style={{ color: player.contract_color }}>
-                              {getContractCountdown(player.days_remaining)}
-                            </span>
+                            <div className="min-w-0 w-full">
+                              <p className="font-bold text-sm truncate">{player.name}</p>
+                              <p className="text-xs text-zinc-400">{player.position}</p>
+                              <div className="flex items-center gap-1 justify-center mt-1">
+                                <Clock className="h-3 w-3 flex-shrink-0" style={{ color: player.contract_color }} />
+                                <span className="text-xs" style={{ color: player.contract_color }}>
+                                  {getContractCountdown(player.days_remaining)}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+
+                  {/* CSS override para móvil: 1.4 cards visibles */}
+                  <style>{`
+                    @media (max-width: 640px) {
+                      [style*="--card-w"] {
+                        --card-w: 72% !important;
+                      }
+                    }
+                    @media (min-width: 641px) and (max-width: 900px) {
+                      [style*="--card-w"] {
+                        --card-w: 33.333% !important;
+                      }
+                    }
+                  `}</style>
                 </div>
 
                 {/* Indicadores de posición */}
-                {players.length > VISIBLE && (
+                {players.length > 1 && (
                   <div className="flex justify-center gap-1 mt-4">
                     {players.map((_, i) => (
                       <button
                         key={i}
-                        onClick={() => setCarouselStart(i)}
+                        onClick={() => goTo(i)}
                         className="transition-all rounded-full"
                         style={{
-                          width: i === carouselStart ? "16px" : "8px",
+                          width: i === carouselIndex ? "16px" : "8px",
                           height: "8px",
-                          background: i === carouselStart ? "#DFFF00" : "rgba(255,255,255,0.2)",
+                          background: i === carouselIndex ? "#DFFF00" : "rgba(255,255,255,0.2)",
                         }}
                       />
                     ))}
@@ -380,11 +445,10 @@ const ClubDashboard = () => {
                     >
                       <div className="flex items-start justify-between mb-1">
                         <h3 className="font-bold text-[#DFFF00] text-sm">{item.title}</h3>
-                        <span className={`text-xs px-2 py-0.5 rounded ${
-                          item.priority === "high"
+                        <span className={`text-xs px-2 py-0.5 rounded ${item.priority === "high"
                             ? "bg-red-500/20 text-red-400"
                             : "bg-zinc-700 text-zinc-400"
-                        }`}>
+                          }`}>
                           {item.priority === "high" ? "URGENTE" : "INFO"}
                         </span>
                       </div>

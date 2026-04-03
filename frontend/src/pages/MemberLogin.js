@@ -8,7 +8,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const MemberLogin = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, adminLogin } = useAuth();
 
   const [clubs, setClubs] = useState([]);
   const [selectedClub, setSelectedClub] = useState(null);
@@ -81,8 +81,7 @@ const MemberLogin = () => {
         username: adminUser,
         password: adminPass,
       });
-      // Guardamos en localStorage igual que AdminLogin.js para que el contexto lo recoja
-      localStorage.setItem("admin_user", JSON.stringify(response.data));
+      adminLogin(response.data);
       setAdminSuccess(true);
       setTimeout(() => navigate("/admin/dashboard"), 1600);
     } catch {
@@ -132,7 +131,6 @@ const MemberLogin = () => {
           overflow: hidden;
         }
 
-        /* Fondo decorativo */
         .login-root::before {
           content: '';
           position: fixed;
@@ -154,7 +152,6 @@ const MemberLogin = () => {
           -webkit-mask-image: radial-gradient(ellipse at 70% 30%, black 30%, transparent 70%);
         }
 
-        /* TOPBAR */
         .topbar {
           height: 56px;
           display: flex;
@@ -212,7 +209,6 @@ const MemberLogin = () => {
           border-color: var(--border2);
         }
 
-        /* MAIN */
         .main {
           flex: 1;
           display: flex;
@@ -224,7 +220,6 @@ const MemberLogin = () => {
           z-index: 10;
         }
 
-        /* Brand */
         .brand {
           display: flex;
           flex-direction: column;
@@ -245,7 +240,6 @@ const MemberLogin = () => {
           color: var(--text3);
         }
 
-        /* CARD */
         .card {
           background: var(--surface);
           border: 1px solid var(--border2);
@@ -271,7 +265,6 @@ const MemberLogin = () => {
           line-height: 1.5;
         }
 
-        /* FIELDS */
         .field { margin-bottom: 20px; }
         .field-label {
           font-size: 10px;
@@ -283,7 +276,6 @@ const MemberLogin = () => {
           display: block;
         }
 
-        /* Custom select */
         .select-wrap { position: relative; }
         .select-btn {
           width: 100%;
@@ -338,7 +330,6 @@ const MemberLogin = () => {
           background: var(--accent-dim);
         }
 
-        /* Input */
         .input {
           width: 100%;
           background: var(--surface2);
@@ -354,7 +345,6 @@ const MemberLogin = () => {
         .input:focus { border-color: rgba(223,255,0,0.45); }
         .input::placeholder { color: var(--text3); }
 
-        /* Botón login */
         .btn-login {
           width: 100%;
           background: var(--accent);
@@ -379,7 +369,6 @@ const MemberLogin = () => {
         .btn-login:active:not(:disabled) { transform: translateY(0); }
         .btn-login:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        /* Error */
         .error-msg {
           background: rgba(255,80,80,0.08);
           border: 1px solid rgba(255,80,80,0.2);
@@ -390,7 +379,6 @@ const MemberLogin = () => {
           margin-top: 12px;
         }
 
-        /* Footer del card */
         .card-footer {
           margin-top: 20px;
           text-align: center;
@@ -409,7 +397,6 @@ const MemberLogin = () => {
           background: var(--border);
         }
 
-        /* ── MODAL ADMIN ── */
         .overlay {
           position: fixed;
           inset: 0;
@@ -506,7 +493,6 @@ const MemberLogin = () => {
           margin-top: 10px;
         }
 
-        /* Success */
         .modal-success {
           text-align: center;
           padding: 16px 0 8px;
@@ -552,7 +538,6 @@ const MemberLogin = () => {
 
         {/* MAIN */}
         <div className="main">
-          {/* Brand */}
           <div className="brand">
             <img
               className="brand-logo"
@@ -562,12 +547,10 @@ const MemberLogin = () => {
             <span className="brand-name">Portal de Clubes</span>
           </div>
 
-          {/* Card */}
           <div className="card">
             <div className="card-title">Iniciar sesión</div>
             <div className="card-sub">Selecciona la entidad e introduce la contraseña</div>
 
-            {/* Select club */}
             <div className="field">
               <label className="field-label">Club deportivo</label>
               <div className="select-wrap">
@@ -596,7 +579,6 @@ const MemberLogin = () => {
               </div>
             </div>
 
-            {/* Password */}
             <div className="field">
               <label className="field-label">Contraseña</label>
               <input
