@@ -5,6 +5,7 @@ import ClubLayout from "@/components/ClubLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import LeagueDashboardWidget from "@/components/LeagueDashboardWidget";
 import {
   FileText, Trophy, Newspaper, TrendingUp, Award, ArrowUp,
   Crown, Shield, User, Users, ChevronLeft, ChevronRight, Clock
@@ -192,6 +193,8 @@ const ClubDashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          <LeagueDashboardWidget clubId={user?.club_id} />
 
           {/* ── Directiva ── */}
           {hasDirectiva && (
