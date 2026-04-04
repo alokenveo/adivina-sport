@@ -66,18 +66,7 @@ const FederationDashboard = () => {
   // Filtros
   const [filterRound, setFilterRound] = useState("all");
 
-  const fetchInitial = useCallback(async () => {
-    await Promise.all([fetchSeasons(), fetchTeams()]);
-  }, []);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("federation_user");
-    if (!stored) { navigate("/liga"); return; }
-    setFedUser(JSON.parse(stored));
-    fetchInitial();
-  }, [navigate, fetchInitial]);
-
-  const fetchSeasons = async () => {
+  const fetchSeasons = useCallback(async () => {
     const res = await axios.get(`${BACKEND_URL}/api/league/seasons`);
     setSeasons(res.data);
     const active = res.data.find(s => s.active);
@@ -86,12 +75,23 @@ const FederationDashboard = () => {
       fetchRounds(active.id);
       fetchMatches(active.id);
     }
-  };
+  }, []);
 
-  const fetchTeams = async () => {
+  const fetchTeams = useCallback(async () => {
     const res = await axios.get(`${BACKEND_URL}/api/league/teams`);
     setTeams(res.data);
-  };
+  }, []);
+
+  const fetchInitial = useCallback(async () => {
+    await Promise.all([fetchSeasons(), fetchTeams()]);
+  }, [fetchSeasons, fetchTeams]);
+  
+  useEffect(() => {
+    const stored = localStorage.getItem("federation_user");
+    if (!stored) { navigate("/liga"); return; }
+    setFedUser(JSON.parse(stored));
+    fetchInitial();
+  }, [navigate, fetchInitial]);
 
   const fetchRounds = async (seasonId) => {
     const res = await axios.get(`${BACKEND_URL}/api/league/rounds?season_id=${seasonId}`);
