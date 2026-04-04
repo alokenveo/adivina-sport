@@ -71,11 +71,11 @@ const FederationDashboard = () => {
     if (!stored) { navigate("/liga"); return; }
     setFedUser(JSON.parse(stored));
     fetchInitial();
-  }, []);
+  }, [fetchInitial]);
 
-  const fetchInitial = async () => {
+  const fetchInitial = useCallback(async () => {
     await Promise.all([fetchSeasons(), fetchTeams()]);
-  };
+  },[navigate]);
 
   const fetchSeasons = async () => {
     const res = await axios.get(`${BACKEND_URL}/api/league/seasons`);
