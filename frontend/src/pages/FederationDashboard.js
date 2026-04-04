@@ -21,9 +21,9 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const STATUS_LABELS = {
   scheduled: { label: "Programado", color: "bg-blue-500/20 text-blue-400" },
-  live:      { label: "En Juego",   color: "bg-green-500/20 text-green-400 animate-pulse" },
-  finished:  { label: "Finalizado", color: "bg-zinc-500/20 text-zinc-400" },
-  postponed: { label: "Aplazado",   color: "bg-yellow-500/20 text-yellow-400" },
+  live: { label: "En Juego", color: "bg-green-500/20 text-green-400 animate-pulse" },
+  finished: { label: "Finalizado", color: "bg-zinc-500/20 text-zinc-400" },
+  postponed: { label: "Aplazado", color: "bg-yellow-500/20 text-yellow-400" },
 };
 
 const FederationDashboard = () => {
@@ -32,20 +32,20 @@ const FederationDashboard = () => {
   const [activeTab, setActiveTab] = useState("matches");
 
   // Data
-  const [seasons, setSeasons]   = useState([]);
-  const [teams, setTeams]       = useState([]);
-  const [rounds, setRounds]     = useState([]);
-  const [matches, setMatches]   = useState([]);
+  const [seasons, setSeasons] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [rounds, setRounds] = useState([]);
+  const [matches, setMatches] = useState([]);
   const [activeSeason, setActiveSeason] = useState(null);
 
   // Dialogs
-  const [matchDialog, setMatchDialog]   = useState(false);
+  const [matchDialog, setMatchDialog] = useState(false);
   const [resultDialog, setResultDialog] = useState(false);
-  const [teamDialog, setTeamDialog]     = useState(false);
-  const [roundDialog, setRoundDialog]   = useState(false);
-  const [newsDialog, setNewsDialog]     = useState(false);
+  const [teamDialog, setTeamDialog] = useState(false);
+  const [roundDialog, setRoundDialog] = useState(false);
+  const [newsDialog, setNewsDialog] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
-  const [editingTeam, setEditingTeam]   = useState(null);
+  const [editingTeam, setEditingTeam] = useState(null);
 
   // Forms
   const [matchForm, setMatchForm] = useState({
@@ -66,16 +66,16 @@ const FederationDashboard = () => {
   // Filtros
   const [filterRound, setFilterRound] = useState("all");
 
+  const fetchInitial = useCallback(async () => {
+    await Promise.all([fetchSeasons(), fetchTeams()]);
+  }, []);
+
   useEffect(() => {
     const stored = localStorage.getItem("federation_user");
     if (!stored) { navigate("/liga"); return; }
     setFedUser(JSON.parse(stored));
     fetchInitial();
-  }, []);
-
-  const fetchInitial = async () => {
-    await Promise.all([fetchSeasons(), fetchTeams()]);
-  };
+  }, [navigate, fetchInitial]);
 
   const fetchSeasons = async () => {
     const res = await axios.get(`${BACKEND_URL}/api/league/seasons`);
@@ -255,10 +255,10 @@ const FederationDashboard = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-4 bg-[#121212] border border-white/10 p-1 h-auto mb-6">
             {[
-              { value: "matches",  Icon: Calendar, label: "Partidos" },
-              { value: "teams",    Icon: Users,    label: "Equipos"  },
-              { value: "rounds",   Icon: Trophy,   label: "Jornadas" },
-              { value: "news",     Icon: Newspaper,label: "Noticias" },
+              { value: "matches", Icon: Calendar, label: "Partidos" },
+              { value: "teams", Icon: Users, label: "Equipos" },
+              { value: "rounds", Icon: Trophy, label: "Jornadas" },
+              { value: "news", Icon: Newspaper, label: "Noticias" },
             ].map(({ value, Icon, label }) => (
               <TabsTrigger
                 key={value}
@@ -311,7 +311,7 @@ const FederationDashboard = () => {
                           <span className="text-xs text-zinc-500">
                             {match.round?.name} ·{" "}
                             {match.match_date
-                              ? new Date(match.match_date).toLocaleDateString("es-ES", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" })
+                              ? new Date(match.match_date).toLocaleDateString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
                               : "Sin fecha"}
                           </span>
                           <Badge className={`${s.color} text-xs border-transparent`}>{s.label}</Badge>
@@ -358,7 +358,7 @@ const FederationDashboard = () => {
           <TabsContent value="teams" className="space-y-4">
             <div className="flex justify-end">
               <Button
-                onClick={() => { setEditingTeam(null); setTeamForm({ name:"",short_name:"",city:"",stadium:"" }); setTeamDialog(true); }}
+                onClick={() => { setEditingTeam(null); setTeamForm({ name: "", short_name: "", city: "", stadium: "" }); setTeamDialog(true); }}
                 className="bg-[#DFFF00] text-black hover:bg-white text-sm"
               >
                 <Plus className="h-4 w-4 mr-1" />Nuevo Equipo
@@ -371,7 +371,7 @@ const FederationDashboard = () => {
                     <img src={team.logo_url} alt={team.name} className="w-12 h-12 rounded-full object-cover" />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-[#1E1E1E] flex items-center justify-center text-zinc-500 font-bold text-sm">
-                      {team.short_name || team.name.substring(0,2).toUpperCase()}
+                      {team.short_name || team.name.substring(0, 2).toUpperCase()}
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -383,7 +383,7 @@ const FederationDashboard = () => {
                     variant="ghost"
                     onClick={() => {
                       setEditingTeam(team);
-                      setTeamForm({ name: team.name, short_name: team.short_name||"", city: team.city||"", stadium: team.stadium||"" });
+                      setTeamForm({ name: team.name, short_name: team.short_name || "", city: team.city || "", stadium: team.stadium || "" });
                       setTeamDialog(true);
                     }}
                     className="text-zinc-400 hover:text-white"
@@ -412,8 +412,8 @@ const FederationDashboard = () => {
                     <span className="font-bold">{round.name}</span>
                     <Badge className={
                       round.status === "finished" ? "bg-zinc-500/20 text-zinc-400" :
-                      round.status === "ongoing"  ? "bg-green-500/20 text-green-400" :
-                      "bg-blue-500/20 text-blue-400"
+                        round.status === "ongoing" ? "bg-green-500/20 text-green-400" :
+                          "bg-blue-500/20 text-blue-400"
                     }>
                       {round.status === "finished" ? "Finalizada" : round.status === "ongoing" ? "En curso" : "Próxima"}
                     </Badge>
@@ -454,7 +454,7 @@ const FederationDashboard = () => {
           <form onSubmit={handleCreateMatch} className="space-y-4">
             <div>
               <Label>Jornada *</Label>
-              <Select value={matchForm.round_id} onValueChange={v => setMatchForm(p => ({...p, round_id: v}))}>
+              <Select value={matchForm.round_id} onValueChange={v => setMatchForm(p => ({ ...p, round_id: v }))}>
                 <SelectTrigger className="mt-1 bg-[#0A0A0A] border-white/10">
                   <SelectValue placeholder="Selecciona jornada" />
                 </SelectTrigger>
@@ -466,7 +466,7 @@ const FederationDashboard = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Local *</Label>
-                <Select value={matchForm.home_team_id} onValueChange={v => setMatchForm(p => ({...p, home_team_id: v}))}>
+                <Select value={matchForm.home_team_id} onValueChange={v => setMatchForm(p => ({ ...p, home_team_id: v }))}>
                   <SelectTrigger className="mt-1 bg-[#0A0A0A] border-white/10">
                     <SelectValue placeholder="Equipo local" />
                   </SelectTrigger>
@@ -477,7 +477,7 @@ const FederationDashboard = () => {
               </div>
               <div>
                 <Label>Visitante *</Label>
-                <Select value={matchForm.away_team_id} onValueChange={v => setMatchForm(p => ({...p, away_team_id: v}))}>
+                <Select value={matchForm.away_team_id} onValueChange={v => setMatchForm(p => ({ ...p, away_team_id: v }))}>
                   <SelectTrigger className="mt-1 bg-[#0A0A0A] border-white/10">
                     <SelectValue placeholder="Equipo visitante" />
                   </SelectTrigger>
@@ -493,13 +493,13 @@ const FederationDashboard = () => {
               <div>
                 <Label>Fecha y hora</Label>
                 <Input type="datetime-local" value={matchForm.match_date}
-                  onChange={e => setMatchForm(p => ({...p, match_date: e.target.value}))}
+                  onChange={e => setMatchForm(p => ({ ...p, match_date: e.target.value }))}
                   className="mt-1 bg-[#0A0A0A] border-white/10" />
               </div>
               <div>
                 <Label>Estadio</Label>
                 <Input value={matchForm.venue}
-                  onChange={e => setMatchForm(p => ({...p, venue: e.target.value}))}
+                  onChange={e => setMatchForm(p => ({ ...p, venue: e.target.value }))}
                   placeholder="Estadio La Paz"
                   className="mt-1 bg-[#0A0A0A] border-white/10" />
               </div>
@@ -525,20 +525,20 @@ const FederationDashboard = () => {
               <div>
                 <Label className="text-xs">{selectedMatch?.home_team?.name}</Label>
                 <Input type="number" min="0" value={resultForm.home_score}
-                  onChange={e => setResultForm(p => ({...p, home_score: e.target.value}))}
+                  onChange={e => setResultForm(p => ({ ...p, home_score: e.target.value }))}
                   className="mt-1 bg-[#0A0A0A] border-white/10 text-center text-3xl font-bold h-16" />
               </div>
               <div className="text-center text-zinc-500 font-bold text-xl pb-4">—</div>
               <div>
                 <Label className="text-xs">{selectedMatch?.away_team?.name}</Label>
                 <Input type="number" min="0" value={resultForm.away_score}
-                  onChange={e => setResultForm(p => ({...p, away_score: e.target.value}))}
+                  onChange={e => setResultForm(p => ({ ...p, away_score: e.target.value }))}
                   className="mt-1 bg-[#0A0A0A] border-white/10 text-center text-3xl font-bold h-16" />
               </div>
             </div>
             <div>
               <Label>Estado</Label>
-              <Select value={resultForm.status} onValueChange={v => setResultForm(p => ({...p, status: v}))}>
+              <Select value={resultForm.status} onValueChange={v => setResultForm(p => ({ ...p, status: v }))}>
                 <SelectTrigger className="mt-1 bg-[#0A0A0A] border-white/10">
                   <SelectValue />
                 </SelectTrigger>
@@ -552,14 +552,14 @@ const FederationDashboard = () => {
             <div>
               <Label>Goleadores locales (separados por coma)</Label>
               <Input value={resultForm.home_scorers}
-                onChange={e => setResultForm(p => ({...p, home_scorers: e.target.value}))}
+                onChange={e => setResultForm(p => ({ ...p, home_scorers: e.target.value }))}
                 placeholder="Nombre1, Nombre2"
                 className="mt-1 bg-[#0A0A0A] border-white/10" />
             </div>
             <div>
               <Label>Goleadores visitantes (separados por coma)</Label>
               <Input value={resultForm.away_scorers}
-                onChange={e => setResultForm(p => ({...p, away_scorers: e.target.value}))}
+                onChange={e => setResultForm(p => ({ ...p, away_scorers: e.target.value }))}
                 placeholder="Nombre1, Nombre2"
                 className="mt-1 bg-[#0A0A0A] border-white/10" />
             </div>
@@ -581,25 +581,25 @@ const FederationDashboard = () => {
               <div>
                 <Label>Nombre *</Label>
                 <Input value={teamForm.name}
-                  onChange={e => setTeamForm(p => ({...p, name: e.target.value}))}
+                  onChange={e => setTeamForm(p => ({ ...p, name: e.target.value }))}
                   required className="mt-1 bg-[#0A0A0A] border-white/10" />
               </div>
               <div>
                 <Label>Abreviatura</Label>
                 <Input value={teamForm.short_name} maxLength={4}
-                  onChange={e => setTeamForm(p => ({...p, short_name: e.target.value.toUpperCase()}))}
+                  onChange={e => setTeamForm(p => ({ ...p, short_name: e.target.value.toUpperCase() }))}
                   placeholder="RAC" className="mt-1 bg-[#0A0A0A] border-white/10" />
               </div>
               <div>
                 <Label>Ciudad</Label>
                 <Input value={teamForm.city}
-                  onChange={e => setTeamForm(p => ({...p, city: e.target.value}))}
+                  onChange={e => setTeamForm(p => ({ ...p, city: e.target.value }))}
                   className="mt-1 bg-[#0A0A0A] border-white/10" />
               </div>
               <div>
                 <Label>Estadio</Label>
                 <Input value={teamForm.stadium}
-                  onChange={e => setTeamForm(p => ({...p, stadium: e.target.value}))}
+                  onChange={e => setTeamForm(p => ({ ...p, stadium: e.target.value }))}
                   className="mt-1 bg-[#0A0A0A] border-white/10" />
               </div>
             </div>
@@ -619,25 +619,25 @@ const FederationDashboard = () => {
               <div>
                 <Label>Número *</Label>
                 <Input type="number" value={roundForm.number}
-                  onChange={e => setRoundForm(p => ({...p, number: e.target.value}))}
+                  onChange={e => setRoundForm(p => ({ ...p, number: e.target.value }))}
                   required className="mt-1 bg-[#0A0A0A] border-white/10" />
               </div>
               <div>
                 <Label>Nombre</Label>
                 <Input value={roundForm.name}
-                  onChange={e => setRoundForm(p => ({...p, name: e.target.value}))}
+                  onChange={e => setRoundForm(p => ({ ...p, name: e.target.value }))}
                   placeholder="Jornada 1" className="mt-1 bg-[#0A0A0A] border-white/10" />
               </div>
               <div>
                 <Label>Fecha inicio</Label>
                 <Input type="date" value={roundForm.date_start}
-                  onChange={e => setRoundForm(p => ({...p, date_start: e.target.value}))}
+                  onChange={e => setRoundForm(p => ({ ...p, date_start: e.target.value }))}
                   className="mt-1 bg-[#0A0A0A] border-white/10" />
               </div>
               <div>
                 <Label>Fecha fin</Label>
                 <Input type="date" value={roundForm.date_end}
-                  onChange={e => setRoundForm(p => ({...p, date_end: e.target.value}))}
+                  onChange={e => setRoundForm(p => ({ ...p, date_end: e.target.value }))}
                   className="mt-1 bg-[#0A0A0A] border-white/10" />
               </div>
             </div>
@@ -654,18 +654,18 @@ const FederationDashboard = () => {
             <div>
               <Label>Título *</Label>
               <Input value={newsForm.title}
-                onChange={e => setNewsForm(p => ({...p, title: e.target.value}))}
+                onChange={e => setNewsForm(p => ({ ...p, title: e.target.value }))}
                 required className="mt-1 bg-[#0A0A0A] border-white/10" />
             </div>
             <div>
               <Label>Contenido</Label>
               <Textarea value={newsForm.content}
-                onChange={e => setNewsForm(p => ({...p, content: e.target.value}))}
+                onChange={e => setNewsForm(p => ({ ...p, content: e.target.value }))}
                 className="mt-1 bg-[#0A0A0A] border-white/10 min-h-28" />
             </div>
             <div>
               <Label>Prioridad</Label>
-              <Select value={newsForm.priority} onValueChange={v => setNewsForm(p => ({...p, priority: v}))}>
+              <Select value={newsForm.priority} onValueChange={v => setNewsForm(p => ({ ...p, priority: v }))}>
                 <SelectTrigger className="mt-1 bg-[#0A0A0A] border-white/10">
                   <SelectValue />
                 </SelectTrigger>
