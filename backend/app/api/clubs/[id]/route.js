@@ -9,16 +9,18 @@ export async function PUT(request, { params }) {
     const body = await request.json()
 
     const update = {}
-    if (body.name)       update.name = body.name
-    if (body.crest_url)  update.crest_url = body.crest_url
-    if (body.status)     update.status = body.status
-    if (body.password)   update.password_hash = await bcrypt.hash(body.password, 12)
+    if (body.name)                        update.name = body.name
+    if (body.crest_url !== undefined)     update.crest_url = body.crest_url
+    if (body.status)                      update.status = body.status
+    if (body.sport)                       update.sport = body.sport
+    if (body.nav_sections !== undefined)  update.nav_sections = body.nav_sections
+    if (body.password)                    update.password_hash = await bcrypt.hash(body.password, 12)
 
     const { data, error } = await supabaseAdmin
       .from('clubs')
       .update(update)
       .eq('id', id)
-      .select('id, name, crest_url, status, created_at')
+      .select('id, name, crest_url, status, sport, nav_sections, created_at')
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })

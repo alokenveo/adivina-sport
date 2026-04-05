@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/App";
 import axios from "axios";
 import { Card, CardContent } from "@/components/ui/card";
 import { Swords, Calendar, ChevronRight } from "lucide-react";
@@ -9,11 +10,15 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 /**
  * LeagueDashboardWidget
  * Muestra resumen rápido de la liga en el ClubDashboard.
- * Props:
- *   clubId  — el club_id del usuario logueado (user.club_id)
+ * Solo se renderiza si el club tiene 'league' en nav_sections.
  */
 const LeagueDashboardWidget = ({ clubId }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // No mostrar si el club no tiene la sección liga habilitada
+  const hasLeagueSection = !user?.nav_sections || user.nav_sections.includes('league');
+
   const [myTeamId, setMyTeamId]     = useState(null);
   const [nextMatch, setNextMatch]   = useState(null);
   const [lastResult, setLastResult] = useState(null);
@@ -23,7 +28,7 @@ const LeagueDashboardWidget = ({ clubId }) => {
   const [hasLeague, setHasLeague]   = useState(false);
 
   useEffect(() => {
-    if (!clubId) { setLoading(false); return; }
+    if (!clubId || !hasLeagueSection) { setLoading(false); return; }
     const load = async () => {
       try {
         // 1. Temporada activa
@@ -33,7 +38,6 @@ const LeagueDashboardWidget = ({ clubId }) => {
         setHasLeague(true);
 
         // 2. Buscar el equipo vinculado al club directamente en league_teams
-        //    (no dependemos de standings, que puede estar vacío si no hay partidos)
         const teamsRes = await axios.get(`${BACKEND_URL}/api/league/teams`);
         const myTeam = teamsRes.data.find(t => t.adivina_club_id === clubId);
         if (!myTeam) { setLoading(false); return; }
@@ -41,7 +45,7 @@ const LeagueDashboardWidget = ({ clubId }) => {
         const teamId = myTeam.id;
         setMyTeamId(teamId);
 
-        // 3. Clasificación (puede estar vacía al principio, no es bloqueante)
+        // 3. Clasificación
         const standingsRes = await axios.get(`${BACKEND_URL}/api/league/standings?season_id=${active.id}`);
         const standings = standingsRes.data;
         setTotalTeams(standings.length);
@@ -73,8 +77,10 @@ const LeagueDashboardWidget = ({ clubId }) => {
       }
     };
     load();
-  }, [clubId]);
+  }, [clubId, hasLeagueSection]);
 
+  // No mostrar si la sección no está habilitada
+  if (!hasLeagueSection) return null;
   if (loading || !hasLeague || !myTeamId) return null;
 
   const getMatchResult = (match, teamId) => {
@@ -89,15 +95,10 @@ const LeagueDashboardWidget = ({ clubId }) => {
 
   const result = lastResult ? getMatchResult(lastResult, myTeamId) : null;
 
-  // Formatea fecha en UTC para evitar el desfase de zona horaria
   const formatMatchDate = (dateStr) => {
     if (!dateStr) return null;
     const d = new Date(dateStr);
-    return d.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "short",
-      timeZone: "UTC",
-    });
+    return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short", timeZone: "UTC" });
   };
 
   const TeamBlock = ({ team, score, isHome }) => (
@@ -196,17 +197,9 @@ const LeagueDashboardWidget = ({ clubId }) => {
                 )}
               </div>
               <div className="flex items-center justify-between gap-1">
-                <TeamBlock
-                  team={lastResult.home_team}
-                  score={lastResult.home_score}
-                  isHome={true}
-                />
+                <TeamBlock team={lastResult.home_team} score={lastResult.home_score} isHome={true} />
                 <span className="text-zinc-600 font-bold shrink-0">—</span>
-                <TeamBlock
-                  team={lastResult.away_team}
-                  score={lastResult.away_score}
-                  isHome={false}
-                />
+                <TeamBlock team={lastResult.away_team} score={lastResult.away_score} isHome={false} />
               </div>
             </div>
           ) : (

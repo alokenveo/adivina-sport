@@ -12,14 +12,24 @@ import { Plus, Edit, Trash2 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
+const SPORTS = [
+  { value: "football",   label: "⚽ Fútbol" },
+  { value: "basketball", label: "🏀 Baloncesto" },
+  { value: "futsal",     label: "🥅 Fútbol Sala" },
+  { value: "volleyball", label: "🏐 Voleibol" },
+  { value: "other",      label: "🏅 Otro deporte" },
+];
+
+const SPORT_LABEL = (value) => SPORTS.find(s => s.value === value)?.label || value;
+
 const ClubsManagement = () => {
   const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingClub, setEditingClub] = useState(null);
-  const [formData, setFormData] = useState({ name: "", password: "", crest_url: "" });
-  const [editFormData, setEditFormData] = useState({ name: "", password: "", crest_url: "", status: "active" });
+  const [formData, setFormData] = useState({ name: "", password: "", crest_url: "", sport: "football" });
+  const [editFormData, setEditFormData] = useState({ name: "", password: "", crest_url: "", status: "active", sport: "football" });
 
   useEffect(() => { fetchClubs(); }, []);
 
@@ -44,7 +54,7 @@ const ClubsManagement = () => {
       await axios.post(`${BACKEND_URL}/api/clubs`, formData);
       toast.success("Club agregado exitosamente");
       setShowAddDialog(false);
-      setFormData({ name: "", password: "", crest_url: "" });
+      setFormData({ name: "", password: "", crest_url: "", sport: "football" });
       fetchClubs();
     } catch (error) {
       toast.error(error.response?.data?.detail || "Error al agregar club");
@@ -78,17 +88,17 @@ const ClubsManagement = () => {
   const openEditDialog = (club) => {
     setEditingClub(club);
     setEditFormData({
-      name: club.name,
-      password: "",
+      name:      club.name,
+      password:  "",
       crest_url: club.crest_url || "",
-      status: club.status || "active",
+      status:    club.status || "active",
+      sport:     club.sport || "football",
     });
     setShowEditDialog(true);
   };
 
   return (
     <>
-      {/* Estilos para hacer los modales responsive en móvil */}
       <style>{`
         .dialog-mobile-scroll {
           max-height: 90dvh !important;
@@ -98,9 +108,7 @@ const ClubsManagement = () => {
           max-width: 480px !important;
         }
         @media (min-width: 640px) {
-          .dialog-mobile-scroll {
-            padding: 24px !important;
-          }
+          .dialog-mobile-scroll { padding: 24px !important; }
         }
       `}</style>
 
@@ -109,7 +117,7 @@ const ClubsManagement = () => {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="min-w-0">
               <CardTitle className="text-2xl">Gestión de Clubes</CardTitle>
-              <CardDescription className="text-zinc-400">Administra clubes e instituciones</CardDescription>
+              <CardDescription className="text-zinc-400">Administra clubes e instituciones deportivas</CardDescription>
             </div>
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
               <DialogTrigger asChild>
@@ -120,7 +128,7 @@ const ClubsManagement = () => {
               <DialogContent className="dialog-mobile-scroll bg-[#121212] border-white/10 text-white">
                 <DialogHeader>
                   <DialogTitle className="text-lg">Nuevo Club</DialogTitle>
-                  <DialogDescription className="text-zinc-400 text-sm">Crea un nuevo club</DialogDescription>
+                  <DialogDescription className="text-zinc-400 text-sm">Crea un nuevo club deportivo</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleAddClub} className="space-y-3 mt-1">
                   <div>
@@ -141,6 +149,22 @@ const ClubsManagement = () => {
                       className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
                       placeholder="Contraseña de acceso"
                     />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Deporte</Label>
+                    <Select value={formData.sport} onValueChange={(v) => setFormData({ ...formData, sport: v })}>
+                      <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#121212] border-white/10">
+                        {SPORTS.map(s => (
+                          <SelectItem key={s.value} value={s.value} className="text-white">{s.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-zinc-600 mt-1">
+                      Define las secciones habilitadas por defecto en el portal del club.
+                    </p>
                   </div>
                   <div>
                     <Label className="text-sm">URL del Escudo <span className="text-zinc-500">(Opcional)</span></Label>
@@ -169,7 +193,7 @@ const ClubsManagement = () => {
                 <TableHeader>
                   <TableRow className="border-white/10">
                     <TableHead className="text-zinc-400">NOMBRE</TableHead>
-                    <TableHead className="text-zinc-400 hidden sm:table-cell">ID</TableHead>
+                    <TableHead className="text-zinc-400 hidden sm:table-cell">DEPORTE</TableHead>
                     <TableHead className="text-zinc-400">ESTADO</TableHead>
                     <TableHead className="text-zinc-400 hidden md:table-cell">FECHA</TableHead>
                     <TableHead className="text-zinc-400 text-right">ACCIONES</TableHead>
@@ -178,8 +202,17 @@ const ClubsManagement = () => {
                 <TableBody>
                   {clubs.map((club) => (
                     <TableRow key={club.id} className="border-white/10">
-                      <TableCell className="font-medium">{club.name}</TableCell>
-                      <TableCell className="text-zinc-400 hidden sm:table-cell text-xs">{club.id}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {club.crest_url && (
+                            <img src={club.crest_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                          )}
+                          <span className="font-medium">{club.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-zinc-400 hidden sm:table-cell text-sm">
+                        {SPORT_LABEL(club.sport) || "—"}
+                      </TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded text-xs ${
                           club.status === "active"
@@ -246,6 +279,19 @@ const ClubsManagement = () => {
                 />
               </div>
               <div>
+                <Label className="text-sm">Deporte</Label>
+                <Select value={editFormData.sport} onValueChange={(v) => setEditFormData({ ...editFormData, sport: v })}>
+                  <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#121212] border-white/10">
+                    {SPORTS.map(s => (
+                      <SelectItem key={s.value} value={s.value} className="text-white">{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label className="text-sm">URL del Escudo</Label>
                 <Input
                   value={editFormData.crest_url}
@@ -278,7 +324,7 @@ const ClubsManagement = () => {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-zinc-500 mt-1">
-                Los clubes inactivos no aparecerán en el login de miembros.
+                  Los clubes inactivos no aparecerán en el login de miembros.
                 </p>
               </div>
               <Button type="submit" className="w-full bg-[#DFFF00] text-black hover:bg-white mt-1">

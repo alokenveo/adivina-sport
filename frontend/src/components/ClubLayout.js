@@ -5,8 +5,56 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import {
   Menu, Home, FileText, Package, Trophy, Palette,
-  LogOut, Receipt, Users, ShoppingBag, Swords          // ← Swords para Liga
+  LogOut, Receipt, Users, ShoppingBag, Swords
 } from "lucide-react";
+
+// Definición centralizada de todas las secciones posibles del nav
+// El admin puede activar/desactivar cada una por club
+const ALL_MENU_ITEMS = [
+  {
+    key:       "contracts",
+    icon:      FileText,
+    label:     "Contratos",
+    path:      "/club/contracts",
+  },
+  {
+    key:       "invoices",
+    icon:      Receipt,
+    label:     "Facturas",
+    path:      "/club/invoices",
+  },
+  {
+    key:       "points",
+    icon:      Trophy,
+    label:     "Sistema de Puntos",
+    path:      "/club/points",
+  },
+  {
+    key:       "kit-design",
+    icon:      Palette,
+    label:     "Diseño de Kit",
+    path:      "/club/kit-design",
+  },
+  {
+    key:       "requests",
+    icon:      Package,
+    label:     "Solicitudes",
+    path:      "/club/requests",
+  },
+  {
+    key:       "orders",
+    icon:      ShoppingBag,
+    label:     "Mis Pedidos",
+    path:      "/club/orders",
+  },
+  {
+    key:       "league",
+    icon:      Swords,
+    label:     "Liga",
+    path:      "/club/liga",
+    highlight: true,
+  },
+];
 
 const ClubLayout = ({ children, title }) => {
   const navigate  = useNavigate();
@@ -14,18 +62,25 @@ const ClubLayout = ({ children, title }) => {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
-  const menuItems = [
-    { icon: Home,      label: "Panel Principal",   path: "/club/dashboard" },
-    { icon: Users,     label: "Perfil del Club",   path: "/club/profile"   },
-    { icon: FileText,  label: "Contratos",          path: "/club/contracts" },
-    { icon: Receipt,   label: "Facturas",           path: "/club/invoices"  },
-    { icon: Trophy,    label: "Sistema de Puntos",  path: "/club/points"    },
-    { icon: Palette,   label: "Diseño de Kit",      path: "/club/kit-design"},
-    { icon: Package,   label: "Solicitudes",         path: "/club/requests"  },
-    { icon: ShoppingBag, label: "Mis Pedidos",      path: "/club/orders"    },
-    { icon: Swords,    label: "Liga",               path: "/club/liga",
-      highlight: true  // ← marca especial para el ítem liga
+  // Perfil siempre visible (no es configurable)
+  const fixedItems = [
+    {
+      key:   "profile",
+      icon:  Users,
+      label: "Perfil del Club",
+      path:  "/club/profile",
     },
+  ];
+
+  // Filtrar secciones según las que tenga habilitadas el club
+  const enabledSections = user?.nav_sections || ALL_MENU_ITEMS.map(i => i.key);
+  const dynamicItems = ALL_MENU_ITEMS.filter(item => enabledSections.includes(item.key));
+
+  // Panel principal siempre primero, luego perfil, luego las dinámicas
+  const menuItems = [
+    { key: "dashboard", icon: Home, label: "Panel Principal", path: "/club/dashboard" },
+    ...fixedItems,
+    ...dynamicItems,
   ];
 
   const handleLogout = () => {
@@ -58,6 +113,12 @@ const ClubLayout = ({ children, title }) => {
                     alt="ADIVINA"
                     className="h-10"
                   />
+                  {/* Etiqueta de deporte */}
+                  {user?.sport && user.sport !== 'football' && (
+                    <span className="mt-3 inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-white/5 text-zinc-500">
+                      {SPORT_LABELS[user.sport] || user.sport}
+                    </span>
+                  )}
                 </div>
                 <nav className="p-4">
                   {menuItems.map((item) => {
@@ -118,7 +179,9 @@ const ClubLayout = ({ children, title }) => {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm font-bold">{user?.club_name}</p>
-              <p className="text-xs text-zinc-500">Member Club</p>
+              <p className="text-xs text-zinc-500">
+                {user?.sport ? SPORT_LABELS[user.sport] || user.sport : "Member Club"}
+              </p>
             </div>
             {user?.crest_url && (
               <img
@@ -139,5 +202,14 @@ const ClubLayout = ({ children, title }) => {
     </div>
   );
 };
+
+// Etiquetas legibles para mostrar el deporte en la UI
+export const SPORT_LABELS = {
+  football:   "Fútbol",
+  basketball: "Baloncesto",
+  volleyball: "Voleibol",
+  futsal:     "Fútbol Sala",
+  other:      "Deportes",
+}
 
 export default ClubLayout;

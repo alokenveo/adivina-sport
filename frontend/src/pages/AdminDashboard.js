@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, LogOut, Users, FileText, Trophy, Palette, MessageSquare, Newspaper, LayoutDashboard, Award, Settings, AlertTriangle } from "lucide-react";
+import {
+  Shield, LogOut, Users, FileText, Trophy, Palette,
+  MessageSquare, Newspaper, LayoutDashboard, Award,
+  Settings, AlertTriangle
+} from "lucide-react";
 import ClubsManagement from "@/components/admin/ClubsManagement";
 import NewsManagement from "@/components/admin/NewsManagement";
 import DashboardContentManagement from "@/components/admin/DashboardContentManagement";
@@ -17,6 +21,7 @@ import MemberTierSystem from "@/components/admin/MemberTierSystem";
 import PointsRulesEngine from "@/components/admin/PointsRulesEngine";
 import ResetManagement from "@/components/admin/ResetManagement";
 import OrdersManagement from "@/components/admin/OrdersManagement";
+import ClubNavConfig from "@/components/admin/ClubNavConfig";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -97,7 +102,14 @@ const AdminDashboard = () => {
           </TabsList>
 
           <TabsContent value="clubs"><ClubsManagement /></TabsContent>
-          <TabsContent value="profile"><ClubProfileEditor /></TabsContent>
+
+          {/* Pestaña Perfiles: editor de perfil + configuración de nav */}
+          <TabsContent value="profile" className="space-y-6">
+            {/* Nav config primero: es la herramienta de personalización principal */}
+            <ClubNavConfig />
+            <ClubProfileEditor />
+          </TabsContent>
+
           <TabsContent value="tiers"><MemberTierSystem /></TabsContent>
 
           <TabsContent value="content" className="space-y-6">
