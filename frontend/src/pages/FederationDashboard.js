@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Shield, LogOut, Trophy, Users, Calendar, Plus, Edit,
-  Trash2, Check, Clock, Newspaper, Upload, AlertTriangle
+  Trash2, Check, Clock, Newspaper, Upload, AlertTriangle, Link
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -34,6 +34,7 @@ const FederationDashboard = () => {
   // Data
   const [seasons, setSeasons] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [clubs, setClubs] = useState([]);   // ← clubs de Adivina para asociar
   const [rounds, setRounds] = useState([]);
   const [matches, setMatches] = useState([]);
   const [activeSeason, setActiveSeason] = useState(null);
@@ -56,7 +57,7 @@ const FederationDashboard = () => {
     home_scorers: "", away_scorers: ""
   });
   const [teamForm, setTeamForm] = useState({
-    name: "", short_name: "", city: "", stadium: ""
+    name: "", short_name: "", city: "", stadium: "", adivina_club_id: ""  // ← añadido
   });
   const [roundForm, setRoundForm] = useState({
     number: "", name: "", date_start: "", date_end: ""
@@ -82,10 +83,20 @@ const FederationDashboard = () => {
     setTeams(res.data);
   }, []);
 
+  // ← Cargar clubs de Adivina para el selector de asociación
+  const fetchClubs = useCallback(async () => {
+    try {
+      const res = await axios.get(`${BACKEND_URL}/api/clubs`);
+      setClubs(res.data);
+    } catch (err) {
+      console.error("Error fetching clubs:", err);
+    }
+  }, []);
+
   const fetchInitial = useCallback(async () => {
-    await Promise.all([fetchSeasons(), fetchTeams()]);
-  }, [fetchSeasons, fetchTeams]);
-  
+    await Promise.all([fetchSeasons(), fetchTeams(), fetchClubs()]);
+  }, [fetchSeasons, fetchTeams, fetchClubs]);
+
   useEffect(() => {
     const stored = localStorage.getItem("federation_user");
     if (!stored) { navigate("/liga"); return; }
@@ -147,16 +158,21 @@ const FederationDashboard = () => {
   const handleSaveTeam = async (e) => {
     e.preventDefault();
     try {
+      // Enviar null si no se seleccionó ningún club
+      const payload = {
+        ...teamForm,
+        adivina_club_id: teamForm.adivina_club_id || null,
+      };
       if (editingTeam) {
-        await axios.put(`${BACKEND_URL}/api/league/teams/${editingTeam.id}`, teamForm);
+        await axios.put(`${BACKEND_URL}/api/league/teams/${editingTeam.id}`, payload);
         toast.success("Equipo actualizado");
       } else {
-        await axios.post(`${BACKEND_URL}/api/league/teams`, teamForm);
+        await axios.post(`${BACKEND_URL}/api/league/teams`, payload);
         toast.success("Equipo creado");
       }
       setTeamDialog(false);
       setEditingTeam(null);
-      setTeamForm({ name: "", short_name: "", city: "", stadium: "" });
+      setTeamForm({ name: "", short_name: "", city: "", stadium: "", adivina_club_id: "" });
       fetchTeams();
     } catch { toast.error("Error al guardar equipo"); }
   };
@@ -214,6 +230,12 @@ const FederationDashboard = () => {
   };
 
   const teamName = (id) => teams.find(t => t.id === id)?.name || id;
+
+  // Helper: nombre del club de Adivina asociado a un equipo
+  const linkedClubName = (adivina_club_id) => {
+    if (!adivina_club_id) return null;
+    return clubs.find(c => c.id === adivina_club_id)?.name || adivina_club_id;
+  };
 
   const filteredMatches = filterRound === "all"
     ? matches
@@ -305,7 +327,6 @@ const FederationDashboard = () => {
                 return (
                   <div key={match.id} className="p-4 bg-[#121212] rounded-xl border border-white/5 hover:border-white/10">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                      {/* Info partido */}
                       <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <span className="text-xs text-zinc-500">
@@ -329,7 +350,6 @@ const FederationDashboard = () => {
                         </div>
                         {match.venue && <p className="text-xs text-zinc-600 mt-1">{match.venue}</p>}
                       </div>
-                      {/* Acciones */}
                       <div className="flex gap-2 shrink-0">
                         <Button
                           size="sm"
@@ -358,7 +378,11 @@ const FederationDashboard = () => {
           <TabsContent value="teams" className="space-y-4">
             <div className="flex justify-end">
               <Button
-                onClick={() => { setEditingTeam(null); setTeamForm({ name: "", short_name: "", city: "", stadium: "" }); setTeamDialog(true); }}
+                onClick={() => {
+                  setEditingTeam(null);
+                  setTeamForm({ name: "", short_name: "", city: "", stadium: "", adivina_club_id: "" });
+                  setTeamDialog(true);
+                }}
                 className="bg-[#DFFF00] text-black hover:bg-white text-sm"
               >
                 <Plus className="h-4 w-4 mr-1" />Nuevo Equipo
@@ -377,13 +401,26 @@ const FederationDashboard = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-bold truncate">{team.name}</p>
                     <p className="text-xs text-zinc-500">{team.city || "—"}</p>
+                    {/* Mostrar si tiene club Adivina asociado */}
+                    {team.adivina_club_id && (
+                      <p className="text-xs text-[#DFFF00]/70 flex items-center gap-1 mt-0.5">
+                        <Link className="h-3 w-3" />
+                        {linkedClubName(team.adivina_club_id)}
+                      </p>
+                    )}
                   </div>
                   <Button
                     size="icon"
                     variant="ghost"
                     onClick={() => {
                       setEditingTeam(team);
-                      setTeamForm({ name: team.name, short_name: team.short_name || "", city: team.city || "", stadium: team.stadium || "" });
+                      setTeamForm({
+                        name: team.name,
+                        short_name: team.short_name || "",
+                        city: team.city || "",
+                        stadium: team.stadium || "",
+                        adivina_club_id: team.adivina_club_id || "",
+                      });
                       setTeamDialog(true);
                     }}
                     className="text-zinc-400 hover:text-white"
@@ -603,6 +640,42 @@ const FederationDashboard = () => {
                   className="mt-1 bg-[#0A0A0A] border-white/10" />
               </div>
             </div>
+
+            {/* ── Asociación con club de Adivina ── */}
+            <div className="pt-1">
+              <Label className="flex items-center gap-1.5">
+                <Link className="h-3.5 w-3.5 text-[#DFFF00]" />
+                Vincular a club de Adivina
+                <span className="text-zinc-500 font-normal">(opcional)</span>
+              </Label>
+              <Select
+                value={teamForm.adivina_club_id || "none"}
+                onValueChange={v => setTeamForm(p => ({ ...p, adivina_club_id: v === "none" ? "" : v }))}
+              >
+                <SelectTrigger className="mt-1 bg-[#0A0A0A] border-white/10">
+                  <SelectValue placeholder="Sin vinculación" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#121212] border-white/10">
+                  <SelectItem value="none">
+                    <span className="text-zinc-500">Sin vinculación</span>
+                  </SelectItem>
+                  {clubs.filter(c => c.status === "active").map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      <div className="flex items-center gap-2">
+                        {c.crest_url && (
+                          <img src={c.crest_url} alt={c.name} className="w-4 h-4 rounded-full object-cover" />
+                        )}
+                        {c.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-zinc-600 mt-1">
+                Al vincular, el club verá sus estadísticas de liga en su portal privado.
+              </p>
+            </div>
+
             <Button type="submit" className="w-full bg-[#DFFF00] text-black hover:bg-white">
               {editingTeam ? "Actualizar" : "Crear"} Equipo
             </Button>
