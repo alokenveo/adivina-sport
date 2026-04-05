@@ -10,9 +10,9 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const STATUS_CONFIG = {
   scheduled: { label: "Programado", color: "bg-blue-500/20 text-blue-400" },
-  live:      { label: "En Juego",   color: "bg-green-500/20 text-green-400" },
-  finished:  { label: "Finalizado", color: "bg-zinc-700/50 text-zinc-400" },
-  postponed: { label: "Aplazado",   color: "bg-yellow-500/20 text-yellow-400" },
+  live: { label: "En Juego", color: "bg-green-500/20 text-green-400" },
+  finished: { label: "Finalizado", color: "bg-zinc-700/50 text-zinc-400" },
+  postponed: { label: "Aplazado", color: "bg-yellow-500/20 text-yellow-400" },
 };
 
 const TeamLogo = ({ team, size = "md" }) => {
@@ -36,11 +36,10 @@ export const MatchCardPublic = ({ match, isEmbedded = false }) => {
   const isFinished = match.status === "finished";
 
   return (
-    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all ${
-      isEmbedded
+    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all ${isEmbedded
         ? "bg-white/3 border-white/5 hover:border-white/10"
         : "bg-[#121212] border-white/5 hover:border-white/10"
-    }`}>
+      }`}>
       {/* Jornada + fecha */}
       <div className="hidden sm:flex flex-col items-start shrink-0 w-28">
         <span style={{ fontSize: "10px", color: "rgba(240,239,232,0.25)", letterSpacing: "0.05em" }}>
@@ -48,7 +47,7 @@ export const MatchCardPublic = ({ match, isEmbedded = false }) => {
         </span>
         {match.match_date && (
           <span style={{ fontSize: "10px", color: "rgba(240,239,232,0.2)" }}>
-            {new Date(match.match_date).toLocaleDateString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+            {new Date(match.match_date).toLocaleDateString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })}
           </span>
         )}
       </div>
@@ -95,13 +94,13 @@ export const MatchCardPublic = ({ match, isEmbedded = false }) => {
  * Se puede usar embebido en Landing o como página standalone.
  */
 export const LeagueContent = ({ isEmbedded = false }) => {
-  const [seasons, setSeasons]     = useState([]);
+  const [seasons, setSeasons] = useState([]);
   const [selectedSeason, setSelectedSeason] = useState(null);
-  const [rounds, setRounds]       = useState([]);
-  const [matches, setMatches]     = useState([]);
+  const [rounds, setRounds] = useState([]);
+  const [matches, setMatches] = useState([]);
   const [standings, setStandings] = useState([]);
-  const [news, setNews]           = useState([]);
-  const [loading, setLoading]     = useState(true);
+  const [news, setNews] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filterRound, setFilterRound] = useState("all");
 
   const fetchAll = useCallback(async (seasonId) => {
@@ -193,9 +192,9 @@ export const LeagueContent = ({ isEmbedded = false }) => {
       <Tabs defaultValue="matches">
         <TabsList className="grid grid-cols-3 bg-white/5 border border-white/10 p-1 h-auto mb-4">
           {[
-            { value: "matches",   Icon: Calendar, label: "Partidos"      },
-            { value: "standings", Icon: Trophy,   label: "Clasificación" },
-            { value: "news",      Icon: Newspaper,label: "Noticias"      },
+            { value: "matches", Icon: Calendar, label: "Partidos" },
+            { value: "standings", Icon: Trophy, label: "Clasificación" },
+            { value: "news", Icon: Newspaper, label: "Noticias" },
           ].map(({ value, Icon, label }) => (
             <TabsTrigger
               key={value}
@@ -326,10 +325,10 @@ export const LeagueContent = ({ isEmbedded = false }) => {
 const LeaguePublic = () => {
   const navigate = useNavigate();
 
-  const [fedModal, setFedModal]   = useState(false);
-  const [fedUser, setFedUser]     = useState("");
-  const [fedPass, setFedPass]     = useState("");
-  const [fedError, setFedError]   = useState("");
+  const [fedModal, setFedModal] = useState(false);
+  const [fedUser, setFedUser] = useState("");
+  const [fedPass, setFedPass] = useState("");
+  const [fedError, setFedError] = useState("");
   const [fedLoading, setFedLoading] = useState(false);
 
   const handleFedLogin = async () => {

@@ -17,6 +17,25 @@ const STATUS_CONFIG = {
   postponed: { label: "Aplazado",   color: "bg-yellow-500/20 text-yellow-400" },
 };
 
+// Formatea fecha/hora en UTC para evitar desfase de zona horaria local
+const formatMatchDateTime = (dateStr, opts = {}) => {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("es-ES", { timeZone: "UTC", ...opts });
+};
+
+const formatMatchDateTimeFull = (dateStr) => {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+  });
+};
+
 const TeamLogo = ({ team, size = "md" }) => {
   const s = size === "sm" ? "w-8 h-8 text-xs" : "w-10 h-10 text-sm";
   if (team?.logo_url) {
@@ -29,7 +48,6 @@ const TeamLogo = ({ team, size = "md" }) => {
   );
 };
 
-/** Card de partido — diseño vertical: escudo arriba, nombre debajo, resultado en centro */
 const MatchCard = ({ match, myTeamId }) => {
   const isMyMatch = match.home_team_id === myTeamId || match.away_team_id === myTeamId;
   const s = STATUS_CONFIG[match.status] || STATUS_CONFIG.scheduled;
@@ -41,7 +59,7 @@ const MatchCard = ({ match, myTeamId }) => {
         ? "bg-[#DFFF00]/5 border-[#DFFF00]/20 hover:border-[#DFFF00]/40"
         : "bg-[#121212] border-white/5 hover:border-white/10"
     }`}>
-      {/* Cabecera: jornada + fecha + estado */}
+      {/* Cabecera */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         {isMyMatch && (
           <span className="flex items-center gap-1 text-xs text-[#DFFF00] font-medium">
@@ -51,18 +69,14 @@ const MatchCard = ({ match, myTeamId }) => {
         <span className="text-xs text-zinc-500">{match.round?.name}</span>
         {match.match_date && (
           <span className="text-xs text-zinc-600">
-            · {new Date(match.match_date).toLocaleDateString("es-ES", {
-              day: "2-digit", month: "short",
-              hour: "2-digit", minute: "2-digit"
-            })}
+            · {formatMatchDateTimeFull(match.match_date)}
           </span>
         )}
         <Badge className={`${s.color} border-transparent text-xs ml-auto`}>{s.label}</Badge>
       </div>
 
-      {/* Cuerpo del partido: equipos + resultado */}
+      {/* Equipos + resultado */}
       <div className="flex items-center justify-between gap-2">
-        {/* Equipo local */}
         <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
           <TeamLogo team={match.home_team} />
           <span className={`text-xs font-semibold text-center leading-tight line-clamp-2 max-w-[80px] sm:max-w-none ${
@@ -72,7 +86,6 @@ const MatchCard = ({ match, myTeamId }) => {
           </span>
         </div>
 
-        {/* Marcador central */}
         <div className="flex flex-col items-center shrink-0 px-2">
           {isFinished ? (
             <span className="text-xl sm:text-2xl font-black tabular-nums whitespace-nowrap">
@@ -85,7 +98,6 @@ const MatchCard = ({ match, myTeamId }) => {
           )}
         </div>
 
-        {/* Equipo visitante */}
         <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
           <TeamLogo team={match.away_team} />
           <span className={`text-xs font-semibold text-center leading-tight line-clamp-2 max-w-[80px] sm:max-w-none ${
@@ -96,7 +108,7 @@ const MatchCard = ({ match, myTeamId }) => {
         </div>
       </div>
 
-      {/* Goleadores (solo si terminado) */}
+      {/* Goleadores */}
       {isFinished && (match.home_scorers?.length > 0 || match.away_scorers?.length > 0) && (
         <div className="mt-3 pt-3 border-t border-white/5 flex justify-between text-xs text-zinc-500 gap-2">
           <span className="truncate">{match.home_scorers?.map(s => s.name).join(", ")}</span>
@@ -107,17 +119,53 @@ const MatchCard = ({ match, myTeamId }) => {
   );
 };
 
+/**
+ * Decide qué jornada mostrar por defecto:
+ * 1. La última jornada con al menos un partido terminado.
+ * 2. Si no hay ninguna, la primera jornada con partidos programados
+ *    cuya fecha de inicio esté más próxima a hoy (o la más baja en número).
+ * 3. Si todo falla, "all".
+ */
+const getDefaultRound = (rounds, matches) => {
+  if (!rounds.length) return "all";
+
+  // Jornadas que tienen al menos un partido terminado
+  const roundsWithFinished = new Set(
+    matches.filter(m => m.status === "finished").map(m => m.round_id)
+  );
+
+  if (roundsWithFinished.size > 0) {
+    // La de número más alto entre las que tienen resultados
+    const candidates = rounds.filter(r => roundsWithFinished.has(r.id));
+    candidates.sort((a, b) => b.number - a.number);
+    return candidates[0].id;
+  }
+
+  // No hay partidos terminados: primera jornada con partidos programados
+  const roundsWithScheduled = new Set(
+    matches.filter(m => m.status === "scheduled").map(m => m.round_id)
+  );
+  if (roundsWithScheduled.size > 0) {
+    const candidates = rounds.filter(r => roundsWithScheduled.has(r.id));
+    candidates.sort((a, b) => a.number - b.number);
+    return candidates[0].id;
+  }
+
+  // Fallback: primera jornada existente
+  return rounds[0]?.id || "all";
+};
+
 const ClubLeague = () => {
   const { user } = useAuth();
-  const [seasons, setSeasons]         = useState([]);
+  const [seasons, setSeasons]               = useState([]);
   const [selectedSeason, setSelectedSeason] = useState(null);
-  const [rounds, setRounds]           = useState([]);
-  const [matches, setMatches]         = useState([]);
-  const [standings, setStandings]     = useState([]);
-  const [news, setNews]               = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [filterRound, setFilterRound] = useState("all");
-  const [myTeamId, setMyTeamId]       = useState(null);
+  const [rounds, setRounds]                 = useState([]);
+  const [matches, setMatches]               = useState([]);
+  const [standings, setStandings]           = useState([]);
+  const [news, setNews]                     = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [filterRound, setFilterRound]       = useState("all");
+  const [myTeamId, setMyTeamId]             = useState(null);
 
   const fetchAll = useCallback(async (seasonId) => {
     setLoading(true);
@@ -128,14 +176,32 @@ const ClubLeague = () => {
         axios.get(`${BACKEND_URL}/api/league/standings?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/news?season_id=${seasonId}`),
       ]);
-      setRounds(roundsRes.data);
-      setMatches(matchesRes.data);
+
+      const roundsData  = roundsRes.data;
+      const matchesData = matchesRes.data;
+
+      setRounds(roundsData);
+      setMatches(matchesData);
       setStandings(standingsRes.data);
       setNews(newsRes.data);
 
+      // Jornada inteligente por defecto
+      const defaultRound = getDefaultRound(roundsData, matchesData);
+      setFilterRound(defaultRound);
+
+      // Buscar equipo del club: primero en standings, luego en equipos directamente
       if (user?.club_id) {
-        const myTeam = standingsRes.data.find(s => s.team?.adivina_club_id === user.club_id);
-        if (myTeam) setMyTeamId(myTeam.team_id);
+        const myEntry = standingsRes.data.find(s => s.team?.adivina_club_id === user.club_id);
+        if (myEntry) {
+          setMyTeamId(myEntry.team_id);
+        } else {
+          // Si no hay standings aún, buscar en league_teams
+          try {
+            const teamsRes = await axios.get(`${BACKEND_URL}/api/league/teams`);
+            const myTeam = teamsRes.data.find(t => t.adivina_club_id === user.club_id);
+            if (myTeam) setMyTeamId(myTeam.id);
+          } catch {}
+        }
       }
     } catch (err) {
       console.error(err);
@@ -187,6 +253,7 @@ const ClubLeague = () => {
     .reverse();
 
   const currentSeasonLabel = seasons.find(s => s.id === selectedSeason)?.name || "";
+  const currentRoundLabel = rounds.find(r => r.id === filterRound)?.name || "Todas las jornadas";
 
   return (
     <ClubLayout title="Liga">
@@ -242,9 +309,9 @@ const ClubLeague = () => {
           <Tabs defaultValue="matches">
             <TabsList className="grid grid-cols-3 bg-[#121212] border border-white/10 p-1 h-auto">
               {[
-                { value: "matches",   Icon: Calendar, label: "Partidos"      },
-                { value: "standings", Icon: Trophy,   label: "Clasificación" },
-                { value: "news",      Icon: Newspaper,label: "Noticias"      },
+                { value: "matches",   Icon: Calendar,  label: "Partidos"      },
+                { value: "standings", Icon: Trophy,    label: "Clasificación" },
+                { value: "news",      Icon: Newspaper, label: "Noticias"      },
               ].map(({ value, Icon, label }) => (
                 <TabsTrigger
                   key={value}
@@ -261,7 +328,7 @@ const ClubLeague = () => {
               <div className="flex items-center gap-3">
                 <Select value={filterRound} onValueChange={setFilterRound}>
                   <SelectTrigger className="w-48 bg-[#121212] border-white/10 text-sm">
-                    <SelectValue placeholder="Todas las jornadas" />
+                    <SelectValue placeholder="Jornada" />
                   </SelectTrigger>
                   <SelectContent className="bg-[#121212] border-white/10">
                     <SelectItem value="all">Todas las jornadas</SelectItem>
@@ -316,7 +383,8 @@ const ClubLeague = () => {
                         </thead>
                         <tbody>
                           {standings.map((row) => {
-                            const isMe = row.team?.adivina_club_id === user?.club_id;
+                            const isMe = row.team?.adivina_club_id === user?.club_id ||
+                                         row.team_id === myTeamId;
                             return (
                               <tr
                                 key={row.id}

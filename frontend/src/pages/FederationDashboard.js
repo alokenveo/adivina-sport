@@ -11,19 +11,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Shield, LogOut, Trophy, Users, Calendar, Plus, Edit,
-  Trash2, Check, Clock, Newspaper, Upload, AlertTriangle, Link
+  Trash2, Check, Clock, Newspaper, Upload, Link, Image
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const STATUS_LABELS = {
   scheduled: { label: "Programado", color: "bg-blue-500/20 text-blue-400" },
-  live: { label: "En Juego", color: "bg-green-500/20 text-green-400 animate-pulse" },
-  finished: { label: "Finalizado", color: "bg-zinc-500/20 text-zinc-400" },
-  postponed: { label: "Aplazado", color: "bg-yellow-500/20 text-yellow-400" },
+  live:      { label: "En Juego",   color: "bg-green-500/20 text-green-400 animate-pulse" },
+  finished:  { label: "Finalizado", color: "bg-zinc-500/20 text-zinc-400" },
+  postponed: { label: "Aplazado",   color: "bg-yellow-500/20 text-yellow-400" },
+};
+
+// Muestra fechas en UTC para que el usuario vea exactamente lo que introdujo
+const formatMatchDateUTC = (dateStr) => {
+  if (!dateStr) return "Sin fecha";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+  });
 };
 
 const FederationDashboard = () => {
@@ -32,21 +44,25 @@ const FederationDashboard = () => {
   const [activeTab, setActiveTab] = useState("matches");
 
   // Data
-  const [seasons, setSeasons] = useState([]);
-  const [teams, setTeams] = useState([]);
-  const [clubs, setClubs] = useState([]);   // ← clubs de Adivina para asociar
-  const [rounds, setRounds] = useState([]);
-  const [matches, setMatches] = useState([]);
+  const [seasons, setSeasons]   = useState([]);
+  const [teams, setTeams]       = useState([]);
+  const [clubs, setClubs]       = useState([]);
+  const [rounds, setRounds]     = useState([]);
+  const [matches, setMatches]   = useState([]);
   const [activeSeason, setActiveSeason] = useState(null);
 
   // Dialogs
-  const [matchDialog, setMatchDialog] = useState(false);
+  const [matchDialog, setMatchDialog]   = useState(false);
   const [resultDialog, setResultDialog] = useState(false);
-  const [teamDialog, setTeamDialog] = useState(false);
-  const [roundDialog, setRoundDialog] = useState(false);
-  const [newsDialog, setNewsDialog] = useState(false);
+  const [teamDialog, setTeamDialog]     = useState(false);
+  const [roundDialog, setRoundDialog]   = useState(false);
+  const [newsDialog, setNewsDialog]     = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
-  const [editingTeam, setEditingTeam] = useState(null);
+  const [editingTeam, setEditingTeam]   = useState(null);
+
+  // Logo upload state
+  const [logoFile, setLogoFile]     = useState(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Forms
   const [matchForm, setMatchForm] = useState({
@@ -57,14 +73,13 @@ const FederationDashboard = () => {
     home_scorers: "", away_scorers: ""
   });
   const [teamForm, setTeamForm] = useState({
-    name: "", short_name: "", city: "", stadium: "", adivina_club_id: ""  // ← añadido
+    name: "", short_name: "", city: "", stadium: "", adivina_club_id: ""
   });
   const [roundForm, setRoundForm] = useState({
     number: "", name: "", date_start: "", date_end: ""
   });
   const [newsForm, setNewsForm] = useState({ title: "", content: "", priority: "normal" });
 
-  // Filtros
   const [filterRound, setFilterRound] = useState("all");
 
   const fetchSeasons = useCallback(async () => {
@@ -83,7 +98,6 @@ const FederationDashboard = () => {
     setTeams(res.data);
   }, []);
 
-  // ← Cargar clubs de Adivina para el selector de asociación
   const fetchClubs = useCallback(async () => {
     try {
       const res = await axios.get(`${BACKEND_URL}/api/clubs`);
@@ -158,23 +172,59 @@ const FederationDashboard = () => {
   const handleSaveTeam = async (e) => {
     e.preventDefault();
     try {
-      // Enviar null si no se seleccionó ningún club
+      let savedTeam;
+
+      // Si el equipo tiene club vinculado, usar el crest_url del club como logo
+      const linkedClub = teamForm.adivina_club_id
+        ? clubs.find(c => c.id === teamForm.adivina_club_id)
+        : null;
+
       const payload = {
-        ...teamForm,
+        name: teamForm.name,
+        short_name: teamForm.short_name,
+        city: teamForm.city,
+        stadium: teamForm.stadium,
         adivina_club_id: teamForm.adivina_club_id || null,
+        // Si hay club vinculado con crest, lo usamos como logo
+        ...(linkedClub?.crest_url ? { logo_url: linkedClub.crest_url } : {}),
       };
+
       if (editingTeam) {
-        await axios.put(`${BACKEND_URL}/api/league/teams/${editingTeam.id}`, payload);
+        const res = await axios.put(`${BACKEND_URL}/api/league/teams/${editingTeam.id}`, payload);
+        savedTeam = res.data;
         toast.success("Equipo actualizado");
       } else {
-        await axios.post(`${BACKEND_URL}/api/league/teams`, payload);
+        const res = await axios.post(`${BACKEND_URL}/api/league/teams`, payload);
+        savedTeam = res.data;
         toast.success("Equipo creado");
       }
+
+      // Si hay un logo personalizado para subir (solo cuando NO hay vinculación)
+      if (logoFile && savedTeam?.id && !teamForm.adivina_club_id) {
+        await uploadTeamLogo(savedTeam.id, logoFile);
+      }
+
       setTeamDialog(false);
       setEditingTeam(null);
+      setLogoFile(null);
       setTeamForm({ name: "", short_name: "", city: "", stadium: "", adivina_club_id: "" });
       fetchTeams();
     } catch { toast.error("Error al guardar equipo"); }
+  };
+
+  // ── Subir logo al bucket logos-league-teams ────────────────────
+  const uploadTeamLogo = async (teamId, file) => {
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      await axios.post(`${BACKEND_URL}/api/upload/league-team-logo/${teamId}`, formData);
+      toast.success("Logo subido");
+    } catch {
+      toast.error("Error al subir el logo");
+    } finally {
+      setUploadingLogo(false);
+    }
   };
 
   // ── Crear jornada ──────────────────────────────────────────────
@@ -230,8 +280,6 @@ const FederationDashboard = () => {
   };
 
   const teamName = (id) => teams.find(t => t.id === id)?.name || id;
-
-  // Helper: nombre del club de Adivina asociado a un equipo
   const linkedClubName = (adivina_club_id) => {
     if (!adivina_club_id) return null;
     return clubs.find(c => c.id === adivina_club_id)?.name || adivina_club_id;
@@ -245,6 +293,17 @@ const FederationDashboard = () => {
     localStorage.removeItem("federation_user");
     navigate("/liga");
   };
+
+  // Qué logo previsualizar en el form de equipo
+  const previewLogoUrl = (() => {
+    if (teamForm.adivina_club_id) {
+      const linked = clubs.find(c => c.id === teamForm.adivina_club_id);
+      return linked?.crest_url || null;
+    }
+    if (logoFile) return URL.createObjectURL(logoFile);
+    if (editingTeam?.logo_url) return editingTeam.logo_url;
+    return null;
+  })();
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
@@ -277,10 +336,10 @@ const FederationDashboard = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-4 bg-[#121212] border border-white/10 p-1 h-auto mb-6">
             {[
-              { value: "matches", Icon: Calendar, label: "Partidos" },
-              { value: "teams", Icon: Users, label: "Equipos" },
-              { value: "rounds", Icon: Trophy, label: "Jornadas" },
-              { value: "news", Icon: Newspaper, label: "Noticias" },
+              { value: "matches", Icon: Calendar,  label: "Partidos" },
+              { value: "teams",   Icon: Users,     label: "Equipos"  },
+              { value: "rounds",  Icon: Trophy,    label: "Jornadas" },
+              { value: "news",    Icon: Newspaper, label: "Noticias" },
             ].map(({ value, Icon, label }) => (
               <TabsTrigger
                 key={value}
@@ -331,9 +390,8 @@ const FederationDashboard = () => {
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <span className="text-xs text-zinc-500">
                             {match.round?.name} ·{" "}
-                            {match.match_date
-                              ? new Date(match.match_date).toLocaleDateString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
-                              : "Sin fecha"}
+                            {/* Hora en UTC */}
+                            {formatMatchDateUTC(match.match_date)}
                           </span>
                           <Badge className={`${s.color} text-xs border-transparent`}>{s.label}</Badge>
                         </div>
@@ -380,6 +438,7 @@ const FederationDashboard = () => {
               <Button
                 onClick={() => {
                   setEditingTeam(null);
+                  setLogoFile(null);
                   setTeamForm({ name: "", short_name: "", city: "", stadium: "", adivina_club_id: "" });
                   setTeamDialog(true);
                 }}
@@ -401,7 +460,6 @@ const FederationDashboard = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-bold truncate">{team.name}</p>
                     <p className="text-xs text-zinc-500">{team.city || "—"}</p>
-                    {/* Mostrar si tiene club Adivina asociado */}
                     {team.adivina_club_id && (
                       <p className="text-xs text-[#DFFF00]/70 flex items-center gap-1 mt-0.5">
                         <Link className="h-3 w-3" />
@@ -414,6 +472,7 @@ const FederationDashboard = () => {
                     variant="ghost"
                     onClick={() => {
                       setEditingTeam(team);
+                      setLogoFile(null);
                       setTeamForm({
                         name: team.name,
                         short_name: team.short_name || "",
@@ -449,7 +508,7 @@ const FederationDashboard = () => {
                     <span className="font-bold">{round.name}</span>
                     <Badge className={
                       round.status === "finished" ? "bg-zinc-500/20 text-zinc-400" :
-                        round.status === "ongoing" ? "bg-green-500/20 text-green-400" :
+                        round.status === "ongoing"  ? "bg-green-500/20 text-green-400" :
                           "bg-blue-500/20 text-blue-400"
                     }>
                       {round.status === "finished" ? "Finalizada" : round.status === "ongoing" ? "En curso" : "Próxima"}
@@ -532,6 +591,7 @@ const FederationDashboard = () => {
                 <Input type="datetime-local" value={matchForm.match_date}
                   onChange={e => setMatchForm(p => ({ ...p, match_date: e.target.value }))}
                   className="mt-1 bg-[#0A0A0A] border-white/10" />
+                <p className="text-xs text-zinc-600 mt-1">La hora se guarda en UTC. Si tu zona es UTC+2, resta 2h.</p>
               </div>
               <div>
                 <Label>Estadio</Label>
@@ -607,7 +667,7 @@ const FederationDashboard = () => {
         </DialogContent>
       </Dialog>
 
-      {/* ── Dialog: Equipo ── */}
+      {/* ── Dialog: Equipo (con logo inteligente) ── */}
       <Dialog open={teamDialog} onOpenChange={setTeamDialog}>
         <DialogContent className="bg-[#121212] border-white/10 text-white max-w-md">
           <DialogHeader>
@@ -641,7 +701,7 @@ const FederationDashboard = () => {
               </div>
             </div>
 
-            {/* ── Asociación con club de Adivina ── */}
+            {/* Vinculación con club Adivina */}
             <div className="pt-1">
               <Label className="flex items-center gap-1.5">
                 <Link className="h-3.5 w-3.5 text-[#DFFF00]" />
@@ -650,7 +710,10 @@ const FederationDashboard = () => {
               </Label>
               <Select
                 value={teamForm.adivina_club_id || "none"}
-                onValueChange={v => setTeamForm(p => ({ ...p, adivina_club_id: v === "none" ? "" : v }))}
+                onValueChange={v => {
+                  setTeamForm(p => ({ ...p, adivina_club_id: v === "none" ? "" : v }));
+                  setLogoFile(null); // resetear archivo al cambiar vinculación
+                }}
               >
                 <SelectTrigger className="mt-1 bg-[#0A0A0A] border-white/10">
                   <SelectValue placeholder="Sin vinculación" />
@@ -676,8 +739,55 @@ const FederationDashboard = () => {
               </p>
             </div>
 
-            <Button type="submit" className="w-full bg-[#DFFF00] text-black hover:bg-white">
-              {editingTeam ? "Actualizar" : "Crear"} Equipo
+            {/* Logo: si hay vinculación → mostrar logo del club; si no → input de subida */}
+            <div className="pt-1">
+              <Label className="flex items-center gap-1.5">
+                <Image className="h-3.5 w-3.5 text-[#DFFF00]" />
+                Logo del equipo
+              </Label>
+
+              {teamForm.adivina_club_id ? (
+                /* Vinculado: mostrar escudo del club automáticamente */
+                <div className="mt-2 flex items-center gap-3 p-3 bg-[#DFFF00]/5 border border-[#DFFF00]/20 rounded-lg">
+                  {previewLogoUrl ? (
+                    <img src={previewLogoUrl} alt="Logo" className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+                      <Image className="h-4 w-4 text-zinc-500" />
+                    </div>
+                  )}
+                  <p className="text-xs text-[#DFFF00]/70">
+                    Se usará el escudo del club vinculado automáticamente.
+                  </p>
+                </div>
+              ) : (
+                /* Sin vinculación: input para subir imagen propia */
+                <div className="mt-2 space-y-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => setLogoFile(e.target.files[0] || null)}
+                    className="bg-[#0A0A0A] border-white/10"
+                  />
+                  {previewLogoUrl && (
+                    <div className="flex items-center gap-3">
+                      <img src={previewLogoUrl} alt="preview" className="w-10 h-10 rounded-full object-cover border border-white/10" />
+                      <span className="text-xs text-zinc-500">Vista previa</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-zinc-600">
+                    La imagen se subirá al bucket <code>logos-league-teams</code>.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={uploadingLogo}
+              className="w-full bg-[#DFFF00] text-black hover:bg-white"
+            >
+              {uploadingLogo ? "Subiendo logo..." : editingTeam ? "Actualizar Equipo" : "Crear Equipo"}
             </Button>
           </form>
         </DialogContent>

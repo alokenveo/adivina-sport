@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Swords, Calendar, ChevronRight, Trophy } from "lucide-react";
+import { Swords, Calendar, ChevronRight } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 /**
  * LeagueDashboardWidget
- * Se usa dentro de ClubDashboard para mostrar un resumen rápido de la liga.
+ * Muestra resumen rápido de la liga en el ClubDashboard.
  * Props:
  *   clubId  — el club_id del usuario logueado (user.club_id)
  */
@@ -33,25 +32,29 @@ const LeagueDashboardWidget = ({ clubId }) => {
         if (!active) { setLoading(false); return; }
         setHasLeague(true);
 
-        // 2. Clasificación para encontrar el equipo del club
+        // 2. Buscar el equipo vinculado al club directamente en league_teams
+        //    (no dependemos de standings, que puede estar vacío si no hay partidos)
+        const teamsRes = await axios.get(`${BACKEND_URL}/api/league/teams`);
+        const myTeam = teamsRes.data.find(t => t.adivina_club_id === clubId);
+        if (!myTeam) { setLoading(false); return; }
+
+        const teamId = myTeam.id;
+        setMyTeamId(teamId);
+
+        // 3. Clasificación (puede estar vacía al principio, no es bloqueante)
         const standingsRes = await axios.get(`${BACKEND_URL}/api/league/standings?season_id=${active.id}`);
         const standings = standingsRes.data;
         setTotalTeams(standings.length);
+        const myEntry = standings.find(s => s.team_id === teamId);
+        if (myEntry) setMyPosition(myEntry);
 
-        const myEntry = standings.find(s => s.team?.adivina_club_id === clubId);
-        if (!myEntry) { setLoading(false); return; }
-
-        const teamId = myEntry.team_id;
-        setMyTeamId(teamId);
-        setMyPosition(myEntry);
-
-        // 3. Partidos del equipo
+        // 4. Partidos del equipo
         const matchesRes = await axios.get(
           `${BACKEND_URL}/api/league/matches?season_id=${active.id}&team_id=${teamId}`
         );
         const matches = matchesRes.data;
 
-        // Próximo partido (scheduled)
+        // Próximo partido (scheduled con fecha)
         const upcoming = matches
           .filter(m => m.status === "scheduled" && m.match_date)
           .sort((a, b) => new Date(a.match_date) - new Date(b.match_date));
@@ -72,13 +75,13 @@ const LeagueDashboardWidget = ({ clubId }) => {
     load();
   }, [clubId]);
 
-  if (loading || !hasLeague) return null;
+  if (loading || !hasLeague || !myTeamId) return null;
 
   const getMatchResult = (match, teamId) => {
     if (!match || match.status !== "finished") return null;
     const isHome = match.home_team_id === teamId;
-    const myScore   = isHome ? match.home_score : match.away_score;
-    const theirScore= isHome ? match.away_score : match.home_score;
+    const myScore    = isHome ? match.home_score : match.away_score;
+    const theirScore = isHome ? match.away_score : match.home_score;
     if (myScore > theirScore)  return { label: "V", color: "text-green-400 bg-green-500/20" };
     if (myScore < theirScore)  return { label: "D", color: "text-red-400 bg-red-500/20" };
     return { label: "E", color: "text-yellow-400 bg-yellow-500/20" };
@@ -86,13 +89,24 @@ const LeagueDashboardWidget = ({ clubId }) => {
 
   const result = lastResult ? getMatchResult(lastResult, myTeamId) : null;
 
+  // Formatea fecha en UTC para evitar el desfase de zona horaria
+  const formatMatchDate = (dateStr) => {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "short",
+      timeZone: "UTC",
+    });
+  };
+
   const TeamBlock = ({ team, score, isHome }) => (
     <div className={`flex items-center gap-2 ${isHome ? "" : "flex-row-reverse"}`}>
       {team?.logo_url ? (
         <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
       ) : (
         <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500 text-xs font-bold shrink-0">
-          {team?.short_name?.substring(0,2) || "?"}
+          {team?.short_name?.substring(0, 2) || "?"}
         </div>
       )}
       <div className={`${isHome ? "text-left" : "text-right"} min-w-0`}>
@@ -126,17 +140,21 @@ const LeagueDashboardWidget = ({ clubId }) => {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Posición en clasificación */}
-          {myPosition && (
+          {myPosition ? (
             <div className="p-3 bg-[#1A1A1A] rounded-lg border border-white/5">
               <p className="text-xs text-zinc-500 mb-1">Clasificación</p>
               <div className="flex items-end gap-1">
                 <span className="text-3xl font-black text-[#DFFF00]">{myPosition.position}º</span>
-                <span className="text-xs text-zinc-500 mb-1">de {totalTeams}</span>
+                {totalTeams > 0 && <span className="text-xs text-zinc-500 mb-1">de {totalTeams}</span>}
               </div>
               <div className="flex gap-2 text-xs mt-1">
                 <span className="text-zinc-500">PJ <span className="text-white">{myPosition.played}</span></span>
                 <span className="text-zinc-500">Pts <span className="text-[#DFFF00] font-bold">{myPosition.points}</span></span>
               </div>
+            </div>
+          ) : (
+            <div className="p-3 bg-[#1A1A1A] rounded-lg border border-white/5 flex items-center justify-center">
+              <p className="text-xs text-zinc-600 text-center">Clasificación pendiente</p>
             </div>
           )}
 
@@ -153,7 +171,7 @@ const LeagueDashboardWidget = ({ clubId }) => {
                   <span className="text-zinc-600 font-bold text-xs">VS</span>
                   {nextMatch.match_date && (
                     <p className="text-[10px] text-zinc-600 mt-0.5">
-                      {new Date(nextMatch.match_date).toLocaleDateString("es-ES", { day:"2-digit", month:"short" })}
+                      {formatMatchDate(nextMatch.match_date)}
                     </p>
                   )}
                 </div>
