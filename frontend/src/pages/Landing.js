@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/App";
+import { Shield, Lock } from "lucide-react";
+import axios from "axios";
+import { LeagueContent } from "./LeaguePublic";
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 // ── URLs de recursos en Supabase Storage ──────────────────────────────────────
-// Sube estos archivos al bucket "recursos" en Supabase y reemplaza las URLs:
 const SUPABASE_RECURSOS_URL = process.env.REACT_APP_SUPABASE_RECURSOS_URL || "";
-// Ejemplo: "https://xxxx.supabase.co/storage/v1/object/public/recursos"
-const VIDEO_1_URL    = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/v_f_1.mp4`      : "/v_f_1.mp4";
-const VIDEO_2_URL    = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/v_f_2.mp4`      : "/v_f_2.mp4";
-const FONDO_GYM_URL  = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/fondo_gym.jpg`  : "/fondo_gym.jpg";
-const LOGO_URL       = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/logo_adivina.png` : "https://customer-assets.emergentagent.com/job_adivina-portal/artifacts/rexq8hh7_A56B5578-48F3-41C0-A247-75CAB5930CA5.png";
+const VIDEO_1_URL    = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/v_f_1.mp4`       : "/v_f_1.mp4";
+const VIDEO_2_URL    = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/v_f_2.mp4`       : "/v_f_2.mp4";
+const FONDO_GYM_URL  = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/fondo_gym.jpg`   : "/fondo_gym.jpg";
+const LOGO_URL       = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/logo_adivina.png`: "https://customer-assets.emergentagent.com/job_adivina-portal/artifacts/rexq8hh7_A56B5578-48F3-41C0-A247-75CAB5930CA5.png";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const Landing = () => {
@@ -19,12 +22,18 @@ const Landing = () => {
   const vid2Ref = useRef(null);
   const [loaded, setLoaded] = useState(false);
 
+  // Fed modal
+  const [fedModal, setFedModal]   = useState(false);
+  const [fedUser, setFedUser]     = useState("");
+  const [fedPass, setFedPass]     = useState("");
+  const [fedError, setFedError]   = useState("");
+  const [fedLoading, setFedLoading] = useState(false);
+
   useEffect(() => {
     const t = setTimeout(() => setLoaded(true), 80);
     return () => clearTimeout(t);
   }, []);
 
-  // Si el auth ya cargó y hay sesión activa, el botón lleva directo al destino
   const handlePortalClick = () => {
     if (!authLoaded) { navigate("/member-club"); return; }
     if (admin)       { navigate("/admin/dashboard");  return; }
@@ -32,24 +41,55 @@ const Landing = () => {
     navigate("/member-club");
   };
 
+  const handleFedLogin = async () => {
+    if (!fedUser || !fedPass) { setFedError("Rellena usuario y contraseña"); return; }
+    setFedLoading(true);
+    setFedError("");
+    try {
+      const res = await axios.post(`${BACKEND_URL}/api/auth/federation/login`, {
+        username: fedUser,
+        password: fedPass,
+      });
+      localStorage.setItem("federation_user", JSON.stringify(res.data));
+      navigate("/federation/dashboard");
+    } catch {
+      setFedError("Credenciales incorrectas");
+      setFedPass("");
+    } finally {
+      setFedLoading(false);
+    }
+  };
+
   return (
     <>
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        html, body {
-          width: 100%; height: 100%;
-          overflow: hidden;
+        /* ── ROOT: scroll normal ── */
+        .landing-root {
+          background: #050505;
+          color: #F0EFE8;
+          font-family: 'Barlow Condensed', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+          min-height: 100dvh;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
 
-        .home-root {
-          position: fixed;
-          inset: 0;
+        .landing-root::-webkit-scrollbar {
+          display: none;
+        }
+
+        /* ─────────────────────────────────
+           SECCIÓN 1 — HERO (viewport height)
+        ───────────────────────────────── */
+        .hero-section {
+          position: relative;
+          width: 100%;
+          height: 100dvh;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #050505;
-          font-family: 'Barlow Condensed', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+          overflow: hidden;
         }
 
         /* FONDO */
@@ -78,6 +118,17 @@ const Landing = () => {
           inset: 0;
           background: radial-gradient(ellipse at center, transparent 20%, rgba(5,5,5,0.85) 100%);
           z-index: 1;
+        }
+        /* Degradado hacia abajo para mezclar con la sección 2 */
+        .hero-bottom-fade {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 120px;
+          background: linear-gradient(to bottom, transparent, #050505);
+          z-index: 2;
+          pointer-events: none;
         }
 
         /* CUADRO CENTRAL */
@@ -127,7 +178,6 @@ const Landing = () => {
           z-index: 2;
         }
 
-        /* label live */
         .live-tag {
           position: absolute;
           bottom: 18px;
@@ -204,7 +254,6 @@ const Landing = () => {
           z-index: 1;
         }
 
-        /* Watermark slogan */
         .slogan-mask {
           position: absolute;
           bottom: 14px;
@@ -226,7 +275,6 @@ const Landing = () => {
           display: inline-block;
         }
 
-        /* Contenido derecha */
         .box-content {
           position: relative;
           z-index: 5;
@@ -276,7 +324,6 @@ const Landing = () => {
           transition: opacity 0.6s 0.7s;
         }
 
-        /* BOTONES */
         .btns {
           display: flex;
           gap: 10px;
@@ -308,12 +355,7 @@ const Landing = () => {
           box-shadow: 0 8px 24px rgba(223,255,0,0.25);
         }
         .btn-primary:active { transform: translateY(0); }
-
-        .btn-arrow {
-          font-size: 16px;
-          line-height: 1;
-          margin-top: -1px;
-        }
+        .btn-arrow { font-size: 16px; line-height: 1; margin-top: -1px; }
 
         /* ESQUINAS */
         .corner {
@@ -326,43 +368,146 @@ const Landing = () => {
         .corner-bl { bottom: 0; left: 0; border-bottom: 2px solid rgba(223,255,0,0.4); border-left: 2px solid rgba(223,255,0,0.4); }
         .corner-br { bottom: 0; right: 0; border-bottom: 2px solid rgba(223,255,0,0.4); border-right: 2px solid rgba(223,255,0,0.4); }
 
-        /* RESPONSIVE — móvil */
+        /* ─────────────────────────────────
+           SECCIÓN 2 — LIGA
+        ───────────────────────────────── */
+        .league-section {
+          background: #050505;
+          position: relative;
+          z-index: 10;
+        }
+        .league-section-inner {
+          max-width: 900px;
+          margin: 0 auto;
+          padding: 60px 16px 80px;
+        }
+        .league-section-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 28px;
+          flex-wrap: wrap;
+        }
+        .league-section-title {
+          font-family: 'Barlow Condensed', sans-serif;
+          font-size: clamp(28px, 5vw, 48px);
+          font-weight: 900;
+          text-transform: uppercase;
+          letter-spacing: -0.02em;
+          color: #F0EFE8;
+        }
+        .league-section-title em {
+          font-style: normal;
+          color: #DFFF00;
+        }
+        .league-section-sub {
+          font-size: 13px;
+          color: rgba(240,239,232,0.3);
+          margin-top: 4px;
+          font-family: 'Manrope', sans-serif;
+        }
+        .btn-fed-small {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          background: transparent;
+          color: rgba(240,239,232,0.25);
+          font-size: 10px;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          padding: 7px 12px;
+          border-radius: 6px;
+          border: 1px solid rgba(255,255,255,0.07);
+          cursor: pointer;
+          font-family: 'Manrope', inherit;
+          transition: all 0.15s;
+          white-space: nowrap;
+          margin-top: 4px;
+        }
+        .btn-fed-small:hover {
+          color: rgba(240,239,232,0.5);
+          border-color: rgba(255,255,255,0.12);
+        }
+        /* Separador sutil entre secciones */
+        .section-divider {
+          width: 100%;
+          height: 1px;
+          background: linear-gradient(to right, transparent, rgba(223,255,0,0.15) 50%, transparent);
+        }
+
+        /* ── Modal federación ── */
+        .fed-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+          display: flex; align-items: center; justify-content: center;
+          z-index: 200; padding: 20px; backdrop-filter: blur(4px);
+        }
+        .fed-modal {
+          background: #0f0f0f; border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 340px; position: relative;
+        }
+        .fed-modal-close {
+          position: absolute; top: 12px; right: 12px;
+          background: rgba(255,255,255,0.05); border: none; border-radius: 50%;
+          width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+          cursor: pointer; color: rgba(240,239,232,0.4); font-size: 13px;
+        }
+        .fed-modal-close:hover { color: #ff7070; }
+        .fed-input {
+          width: 100%; background: #181818; border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 8px; padding: 11px 13px; color: #F0EFE8; font-size: 14px;
+          font-family: inherit; outline: none; margin-top: 6px; box-sizing: border-box;
+          transition: border-color 0.15s;
+        }
+        .fed-input:focus { border-color: rgba(223,255,0,0.4); }
+        .fed-label {
+          font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+          color: rgba(240,239,232,0.3); display: block; margin-top: 14px;
+        }
+        .fed-btn {
+          width: 100%; background: #DFFF00; color: #050505;
+          font-family: 'Barlow Condensed', inherit; font-size: 13px; font-weight: 800;
+          letter-spacing: 0.12em; text-transform: uppercase; padding: 12px; border: none;
+          border-radius: 8px; cursor: pointer; margin-top: 18px; transition: background 0.15s;
+        }
+        .fed-btn:hover:not(:disabled) { background: #f0ff33; }
+        .fed-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .fed-error {
+          background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.2);
+          border-radius: 6px; color: #ff7070; font-size: 12px; padding: 8px 12px; margin-top: 10px;
+        }
+
+        /* ── RESPONSIVE — móvil ── */
         @media (max-width: 540px) {
-          html, body { overflow: auto; }
-          .home-root { position: relative; min-height: 100dvh; align-items: flex-start; padding: 0; }
+          .hero-section { height: 100dvh; }
           .box {
             flex-direction: column;
             width: 100vw;
             height: auto;
-            min-height: 100dvh;
+            min-height: calc(100dvh - 0px);
             border-radius: 0;
             box-shadow: none;
           }
-          .box-left {
-            width: 100%;
-            height: 240px;
-            flex-shrink: 0;
-          }
+          .box-left { width: 100%; height: 220px; flex-shrink: 0; }
           .box-left video { object-position: center 20%; }
           .divider {
-            left: 0; right: 0; top: 240px;
+            left: 0; right: 0; top: 220px;
             width: 100%; height: 1px;
             background: linear-gradient(to right, transparent, rgba(223,255,0,0.7) 50%, transparent);
             transform: none;
           }
-          .box-right {
-            width: 100%;
-            flex: 1;
-          }
+          .box-right { width: 100%; flex: 1; }
           .box-content { padding: 32px 24px 48px; }
           .headline { font-size: 32px; }
           .btns { flex-direction: column; }
           .btn-primary { justify-content: center; padding: 14px 24px; }
           .corner-tl, .corner-tr, .corner-bl, .corner-br { display: none; }
           .slogan-mask span { font-size: 30px; }
+          .league-section-inner { padding: 40px 16px 60px; }
         }
 
-        /* RESPONSIVE — tablet */
+        /* ── RESPONSIVE — tablet ── */
         @media (min-width: 541px) and (max-width: 860px) {
           .box {
             width: calc(100vw - 48px);
@@ -374,65 +519,128 @@ const Landing = () => {
         }
       `}</style>
 
-      <div className="home-root">
-        {/* Fondo */}
-        <div className="bg-gym" />
-        <div className="bg-grid" />
-        <div className="bg-vignette" />
+      <div className="landing-root">
 
-        {/* Cuadro central */}
-        <div className="box">
-          {/* Esquinas */}
-          <div className="corner corner-tl" />
-          <div className="corner corner-tr" />
-          <div className="corner corner-bl" />
-          <div className="corner corner-br" />
+        {/* ═══════════════════════════════
+            SECCIÓN 1 — HERO
+        ═══════════════════════════════ */}
+        <section className="hero-section">
+          {/* Fondo */}
+          <div className="bg-gym" />
+          <div className="bg-grid" />
+          <div className="bg-vignette" />
 
-          {/* ── IZQUIERDA ── */}
-          <div className="box-left">
-            <video ref={vid1Ref} autoPlay muted loop playsInline preload="auto">
-              <source src={VIDEO_1_URL} type="video/mp4" />
-            </video>
-            <div className="box-left-overlay" />
-            <div className="live-tag">
-              <div className="live-dot" />
-              <span className="live-text">Adivina Sport</span>
+          {/* Cuadro central */}
+          <div className="box">
+            <div className="corner corner-tl" />
+            <div className="corner corner-tr" />
+            <div className="corner corner-bl" />
+            <div className="corner corner-br" />
+
+            {/* IZQUIERDA */}
+            <div className="box-left">
+              <video ref={vid1Ref} autoPlay muted loop playsInline preload="auto">
+                <source src={VIDEO_1_URL} type="video/mp4" />
+              </video>
+              <div className="box-left-overlay" />
+              <div className="live-tag">
+                <div className="live-dot" />
+                <span className="live-text">Adivina Sport</span>
+              </div>
+            </div>
+
+            {/* Divisor */}
+            <div className="divider" />
+
+            {/* DERECHA */}
+            <div className="box-right">
+              <video ref={vid2Ref} autoPlay muted loop playsInline preload="auto">
+                <source src={VIDEO_2_URL} type="video/mp4" />
+              </video>
+              <div className="box-right-overlay" />
+              <div className="slogan-mask">
+                <span>ELITE SPORTS</span>
+              </div>
+              <div className="box-content">
+                <div className="eyebrow">Página oficial</div>
+                <div className="headline">
+                  de Adivina<br /><em>sport</em>
+                </div>
+                <div className="subline">
+                  Suplementación deportiva<br />
+                  para clubes e instituciones
+                </div>
+                <div className="btns">
+                  <button className="btn-primary" onClick={handlePortalClick}>
+                    ACCEDER AL PORTAL DE CLUBES
+                    <span className="btn-arrow">›</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Divisor */}
-          <div className="divider" />
+          {/* Fade hacia abajo */}
+          <div className="hero-bottom-fade" />
+        </section>
 
-          {/* ── DERECHA ── */}
-          <div className="box-right">
-            <video ref={vid2Ref} autoPlay muted loop playsInline preload="auto">
-              <source src={VIDEO_2_URL} type="video/mp4" />
-            </video>
-            <div className="box-right-overlay" />
+        {/* ═══════════════════════════════
+            SECCIÓN 2 — LIGA
+        ═══════════════════════════════ */}
+        <div className="section-divider" />
 
-            <div className="slogan-mask">
-              <span>ELITE SPORTS</span>
+        <section className="league-section">
+          <div className="league-section-inner">
+            <div className="league-section-header">
+              <div>
+                <h2 className="league-section-title">
+                  Liga <em>Ecuatoguineana</em>
+                </h2>
+                <p className="league-section-sub">
+                  Resultados, clasificación y noticias en tiempo real
+                </p>
+              </div>
+              <button className="btn-fed-small" onClick={() => setFedModal(true)}>
+                <Lock size={10} />
+                Acceso Federación
+              </button>
             </div>
 
-            <div className="box-content">
-              <div className="eyebrow">Página oficial</div>
-              <div className="headline">
-                de Adivina<br /><em>sport</em>
+            <LeagueContent isEmbedded={true} />
+          </div>
+        </section>
+
+      </div>
+
+      {/* ── Modal federación ── */}
+      {fedModal && (
+        <div className="fed-overlay" onClick={e => { if (e.target.classList.contains("fed-overlay")) setFedModal(false); }}>
+          <div className="fed-modal">
+            <button className="fed-modal-close" onClick={() => setFedModal(false)}>✕</button>
+            <div style={{ marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                <Shield size={18} color="#DFFF00" />
+                <span style={{ fontWeight: 800, fontSize: "18px", fontFamily: "Barlow Condensed, sans-serif", textTransform: "uppercase" }}>
+                  Acceso Federación
+                </span>
               </div>
-              <div className="subline">
-                Suplementación deportiva<br />
-                para clubes e instituciones
-              </div>
-              <div className="btns">
-                <button className="btn-primary" onClick={handlePortalClick}>
-                  ACCEDER AL PORTAL DE CLUBES
-                  <span className="btn-arrow">›</span>
-                </button>
-              </div>
+              <p style={{ fontSize: "12px", color: "rgba(240,239,232,0.35)" }}>Panel de gestión de la liga</p>
             </div>
+            <label className="fed-label">Usuario</label>
+            <input className="fed-input" type="text" value={fedUser}
+              onChange={e => setFedUser(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleFedLogin()} />
+            <label className="fed-label">Contraseña</label>
+            <input className="fed-input" type="password" value={fedPass}
+              onChange={e => setFedPass(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleFedLogin()} />
+            {fedError && <div className="fed-error">{fedError}</div>}
+            <button className="fed-btn" onClick={handleFedLogin} disabled={fedLoading}>
+              {fedLoading ? "Comprobando..." : "Entrar al panel"}
+            </button>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 };
