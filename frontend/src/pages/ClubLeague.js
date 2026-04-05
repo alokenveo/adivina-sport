@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Calendar, Newspaper, Users, Clock, Star } from "lucide-react";
+import { Trophy, Calendar, Newspaper, Clock, Star } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -18,35 +18,36 @@ const STATUS_CONFIG = {
 };
 
 const TeamLogo = ({ team, size = "md" }) => {
-  const s = size === "sm" ? "w-8 h-8 text-xs" : "w-12 h-12 text-sm";
+  const s = size === "sm" ? "w-8 h-8 text-xs" : "w-10 h-10 text-sm";
   if (team?.logo_url) {
-    return <img src={team.logo_url} alt={team.name} className={`${s} rounded-full object-cover`} />;
+    return <img src={team.logo_url} alt={team.name} className={`${s} rounded-full object-cover flex-shrink-0`} />;
   }
   return (
-    <div className={`${s} rounded-full bg-[#1E1E1E] border border-white/10 flex items-center justify-center font-bold text-zinc-400`}>
-      {team?.short_name || team?.name?.substring(0,2).toUpperCase() || "?"}
+    <div className={`${s} rounded-full bg-[#1E1E1E] border border-white/10 flex items-center justify-center font-bold text-zinc-400 flex-shrink-0`}>
+      {team?.short_name?.substring(0, 2) || team?.name?.substring(0, 2).toUpperCase() || "?"}
     </div>
   );
 };
 
+/** Card de partido — diseño vertical: escudo arriba, nombre debajo, resultado en centro */
 const MatchCard = ({ match, myTeamId }) => {
   const isMyMatch = match.home_team_id === myTeamId || match.away_team_id === myTeamId;
   const s = STATUS_CONFIG[match.status] || STATUS_CONFIG.scheduled;
   const isFinished = match.status === "finished";
 
   return (
-    <div className={`p-4 rounded-xl border transition-all ${
+    <div className={`p-3 sm:p-4 rounded-xl border transition-all ${
       isMyMatch
         ? "bg-[#DFFF00]/5 border-[#DFFF00]/20 hover:border-[#DFFF00]/40"
         : "bg-[#121212] border-white/5 hover:border-white/10"
     }`}>
-      {isMyMatch && (
-        <div className="flex items-center gap-1 mb-2">
-          <Star className="h-3 w-3 text-[#DFFF00] fill-[#DFFF00]" />
-          <span className="text-xs text-[#DFFF00] font-medium">Tu partido</span>
-        </div>
-      )}
-      <div className="flex items-center gap-2 mb-3">
+      {/* Cabecera: jornada + fecha + estado */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        {isMyMatch && (
+          <span className="flex items-center gap-1 text-xs text-[#DFFF00] font-medium">
+            <Star className="h-3 w-3 fill-[#DFFF00]" />Tu partido
+          </span>
+        )}
         <span className="text-xs text-zinc-500">{match.round?.name}</span>
         {match.match_date && (
           <span className="text-xs text-zinc-600">
@@ -59,37 +60,47 @@ const MatchCard = ({ match, myTeamId }) => {
         <Badge className={`${s.color} border-transparent text-xs ml-auto`}>{s.label}</Badge>
       </div>
 
+      {/* Cuerpo del partido: equipos + resultado */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-3 flex-1">
+        {/* Equipo local */}
+        <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
           <TeamLogo team={match.home_team} />
-          <span className={`font-bold text-sm truncate ${match.home_team_id === myTeamId ? "text-[#DFFF00]" : ""}`}>
+          <span className={`text-xs font-semibold text-center leading-tight line-clamp-2 max-w-[80px] sm:max-w-none ${
+            match.home_team_id === myTeamId ? "text-[#DFFF00]" : "text-white"
+          }`}>
             {match.home_team?.name}
           </span>
         </div>
 
-        <div className="shrink-0 text-center px-3">
+        {/* Marcador central */}
+        <div className="flex flex-col items-center shrink-0 px-2">
           {isFinished ? (
-            <span className="text-2xl font-black tabular-nums">
-              {match.home_score}<span className="text-zinc-500 mx-1">-</span>{match.away_score}
+            <span className="text-xl sm:text-2xl font-black tabular-nums whitespace-nowrap">
+              {match.home_score}
+              <span className="text-zinc-500 mx-1 font-normal">-</span>
+              {match.away_score}
             </span>
           ) : (
             <span className="text-sm text-zinc-600 font-bold">VS</span>
           )}
         </div>
 
-        <div className="flex items-center gap-3 flex-1 justify-end">
-          <span className={`font-bold text-sm truncate text-right ${match.away_team_id === myTeamId ? "text-[#DFFF00]" : ""}`}>
+        {/* Equipo visitante */}
+        <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+          <TeamLogo team={match.away_team} />
+          <span className={`text-xs font-semibold text-center leading-tight line-clamp-2 max-w-[80px] sm:max-w-none ${
+            match.away_team_id === myTeamId ? "text-[#DFFF00]" : "text-white"
+          }`}>
             {match.away_team?.name}
           </span>
-          <TeamLogo team={match.away_team} />
         </div>
       </div>
 
-      {/* Goleadores */}
+      {/* Goleadores (solo si terminado) */}
       {isFinished && (match.home_scorers?.length > 0 || match.away_scorers?.length > 0) && (
-        <div className="mt-3 pt-3 border-t border-white/5 flex justify-between text-xs text-zinc-500">
-          <span>{match.home_scorers?.map(s => s.name).join(", ") || ""}</span>
-          <span className="text-right">{match.away_scorers?.map(s => s.name).join(", ") || ""}</span>
+        <div className="mt-3 pt-3 border-t border-white/5 flex justify-between text-xs text-zinc-500 gap-2">
+          <span className="truncate">{match.home_scorers?.map(s => s.name).join(", ")}</span>
+          <span className="truncate text-right">{match.away_scorers?.map(s => s.name).join(", ")}</span>
         </div>
       )}
     </div>
@@ -98,18 +109,15 @@ const MatchCard = ({ match, myTeamId }) => {
 
 const ClubLeague = () => {
   const { user } = useAuth();
-  const [seasons, setSeasons]   = useState([]);
-  const [activeSeason, setActiveSeason] = useState(null);
+  const [seasons, setSeasons]         = useState([]);
   const [selectedSeason, setSelectedSeason] = useState(null);
-  const [rounds, setRounds]     = useState([]);
-  const [matches, setMatches]   = useState([]);
-  const [standings, setStandings] = useState([]);
-  const [news, setNews]         = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const [rounds, setRounds]           = useState([]);
+  const [matches, setMatches]         = useState([]);
+  const [standings, setStandings]     = useState([]);
+  const [news, setNews]               = useState([]);
+  const [loading, setLoading]         = useState(true);
   const [filterRound, setFilterRound] = useState("all");
-
-  // Buscar el league_team_id que corresponde al club del usuario
-  const [myTeamId, setMyTeamId] = useState(null);
+  const [myTeamId, setMyTeamId]       = useState(null);
 
   const fetchAll = useCallback(async (seasonId) => {
     setLoading(true);
@@ -125,7 +133,6 @@ const ClubLeague = () => {
       setStandings(standingsRes.data);
       setNews(newsRes.data);
 
-      // Detectar si el club del usuario tiene equipo en la liga
       if (user?.club_id) {
         const myTeam = standingsRes.data.find(s => s.team?.adivina_club_id === user.club_id);
         if (myTeam) setMyTeamId(myTeam.team_id);
@@ -143,7 +150,6 @@ const ClubLeague = () => {
       setSeasons(res.data);
       const active = res.data.find(s => s.active);
       if (active) {
-        setActiveSeason(active);
         setSelectedSeason(active.id);
         fetchAll(active.id);
       } else if (res.data.length > 0) {
@@ -165,7 +171,6 @@ const ClubLeague = () => {
     ? matches
     : matches.filter(m => m.round_id === filterRound);
 
-  // Partidos próximos del club del usuario
   const myUpcomingMatches = matches
     .filter(m =>
       (m.home_team_id === myTeamId || m.away_team_id === myTeamId) &&
@@ -198,7 +203,7 @@ const ClubLeague = () => {
           {/* Selector de temporada */}
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2">
-              {activeSeason && (
+              {seasons.find(s => s.active) && (
                 <span className="text-xs bg-green-500/20 text-green-400 px-3 py-1 rounded-full border border-green-500/30">
                   Temporada activa
                 </span>
@@ -218,7 +223,7 @@ const ClubLeague = () => {
             )}
           </div>
 
-          {/* Mis próximos partidos (si el club está en la liga) */}
+          {/* Próximos partidos del club */}
           {myTeamId && myUpcomingMatches.length > 0 && (
             <Card className="bg-gradient-to-br from-[#DFFF00]/10 to-transparent border-[#DFFF00]/20">
               <CardHeader className="pb-3">
@@ -274,7 +279,7 @@ const ClubLeague = () => {
                   <p>No hay partidos en esta jornada</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {filteredMatches.map(m => (
                     <MatchCard key={m.id} match={m} myTeamId={myTeamId} />
                   ))}
@@ -303,16 +308,14 @@ const ClubLeague = () => {
                             <th className="text-left py-3">Equipo</th>
                             <th className="text-center py-3 px-2">PJ</th>
                             <th className="text-center py-3 px-2">G</th>
-                            <th className="text-center py-3 px-2">E</th>
-                            <th className="text-center py-3 px-2">P</th>
-                            <th className="text-center py-3 px-2 hidden sm:table-cell">GF</th>
-                            <th className="text-center py-3 px-2 hidden sm:table-cell">GC</th>
+                            <th className="text-center py-3 px-2 hidden sm:table-cell">E</th>
+                            <th className="text-center py-3 px-2 hidden sm:table-cell">P</th>
                             <th className="text-center py-3 px-2">DG</th>
                             <th className="text-center py-3 pr-4 font-bold">Pts</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {standings.map((row, i) => {
+                          {standings.map((row) => {
                             const isMe = row.team?.adivina_club_id === user?.club_id;
                             return (
                               <tr
@@ -327,20 +330,16 @@ const ClubLeague = () => {
                                 <td className="py-3">
                                   <div className="flex items-center gap-2">
                                     <TeamLogo team={row.team} size="sm" />
-                                    <span className={`font-medium ${isMe ? "text-[#DFFF00]" : ""}`}>
+                                    <span className={`font-medium text-sm ${isMe ? "text-[#DFFF00]" : ""}`}>
                                       {row.team?.name}
                                     </span>
-                                    {isMe && (
-                                      <Star className="h-3 w-3 text-[#DFFF00] fill-[#DFFF00]" />
-                                    )}
+                                    {isMe && <Star className="h-3 w-3 text-[#DFFF00] fill-[#DFFF00] flex-shrink-0" />}
                                   </div>
                                 </td>
                                 <td className="text-center py-3 px-2 text-zinc-400">{row.played}</td>
                                 <td className="text-center py-3 px-2 text-green-400">{row.won}</td>
-                                <td className="text-center py-3 px-2 text-zinc-400">{row.drawn}</td>
-                                <td className="text-center py-3 px-2 text-red-400">{row.lost}</td>
-                                <td className="text-center py-3 px-2 text-zinc-400 hidden sm:table-cell">{row.goals_for}</td>
-                                <td className="text-center py-3 px-2 text-zinc-400 hidden sm:table-cell">{row.goals_against}</td>
+                                <td className="text-center py-3 px-2 text-zinc-400 hidden sm:table-cell">{row.drawn}</td>
+                                <td className="text-center py-3 px-2 text-red-400 hidden sm:table-cell">{row.lost}</td>
                                 <td className="text-center py-3 px-2 text-zinc-400">
                                   {row.goal_difference > 0 ? `+${row.goal_difference}` : row.goal_difference}
                                 </td>

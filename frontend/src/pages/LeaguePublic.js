@@ -17,11 +17,64 @@ const STATUS_CONFIG = {
 
 const TeamLogo = ({ team }) => {
   if (team?.logo_url) {
-    return <img src={team.logo_url} alt={team.name} className="w-10 h-10 rounded-full object-cover" />;
+    return <img src={team.logo_url} alt={team.name} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />;
   }
   return (
-    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-zinc-500 text-xs">
-      {team?.short_name || team?.name?.substring(0,2).toUpperCase() || "?"}
+    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-bold text-zinc-500 text-xs flex-shrink-0">
+      {team?.short_name || team?.name?.substring(0, 2).toUpperCase() || "?"}
+    </div>
+  );
+};
+
+/** Card de partido responsive: equipos en columna, nombre debajo del escudo */
+const MatchCardPublic = ({ match }) => {
+  const s = STATUS_CONFIG[match.status] || STATUS_CONFIG.scheduled;
+  const isFinished = match.status === "finished";
+
+  return (
+    <div className="p-3 sm:p-4 bg-[#121212] rounded-xl border border-white/5 hover:border-white/10 transition-all">
+      {/* Cabecera */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span style={{ fontSize: "11px", color: "rgba(240,239,232,0.3)" }}>
+          {match.round?.name}
+          {match.match_date && ` · ${new Date(match.match_date).toLocaleDateString("es-ES", {
+            day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"
+          })}`}
+        </span>
+        <Badge className={`${s.color} border-transparent text-xs ml-auto`}>{s.label}</Badge>
+      </div>
+
+      {/* Cuerpo: equipo | resultado | equipo */}
+      <div className="flex items-center justify-between gap-2">
+        {/* Local */}
+        <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+          <TeamLogo team={match.home_team} />
+          <span className="text-xs font-semibold text-center leading-tight line-clamp-2 text-white max-w-[80px] sm:max-w-none">
+            {match.home_team?.name}
+          </span>
+        </div>
+
+        {/* Resultado */}
+        <div className="shrink-0 text-center px-2">
+          {isFinished ? (
+            <span style={{ fontSize: "20px", fontWeight: 900, whiteSpace: "nowrap" }}>
+              {match.home_score}
+              <span style={{ color: "rgba(240,239,232,0.2)", margin: "0 4px" }}>-</span>
+              {match.away_score}
+            </span>
+          ) : (
+            <span style={{ color: "rgba(240,239,232,0.25)", fontWeight: 700 }}>VS</span>
+          )}
+        </div>
+
+        {/* Visitante */}
+        <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+          <TeamLogo team={match.away_team} />
+          <span className="text-xs font-semibold text-center leading-tight line-clamp-2 text-white max-w-[80px] sm:max-w-none">
+            {match.away_team?.name}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -37,7 +90,6 @@ const LeaguePublic = () => {
   const [loading, setLoading]     = useState(true);
   const [filterRound, setFilterRound] = useState("all");
 
-  // Admin federation login state
   const [fedModal, setFedModal]   = useState(false);
   const [fedUser, setFedUser]     = useState("");
   const [fedPass, setFedPass]     = useState("");
@@ -133,7 +185,7 @@ const LeaguePublic = () => {
         .lp-header-inner {
           max-width: 900px;
           margin: 0 auto;
-          padding: 14px 20px;
+          padding: 14px 16px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -145,9 +197,10 @@ const LeaguePublic = () => {
           gap: 10px;
         }
         .lp-brand-logo {
-          height: 32px;
+          height: 28px;
           filter: brightness(0) invert(1);
           opacity: 0.85;
+          cursor: pointer;
         }
         .lp-brand-divider {
           width: 1px;
@@ -164,7 +217,7 @@ const LeaguePublic = () => {
         .lp-actions {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
         }
         .btn-portal {
           display: flex;
@@ -176,12 +229,13 @@ const LeaguePublic = () => {
           font-weight: 800;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          padding: 8px 14px;
+          padding: 8px 12px;
           border-radius: 6px;
           border: none;
           cursor: pointer;
           font-family: 'Barlow Condensed', inherit;
           transition: background 0.15s;
+          white-space: nowrap;
         }
         .btn-portal:hover { background: #f0ff33; }
         .btn-fed {
@@ -194,12 +248,13 @@ const LeaguePublic = () => {
           font-weight: 600;
           letter-spacing: 0.1em;
           text-transform: uppercase;
-          padding: 7px 12px;
+          padding: 7px 10px;
           border-radius: 6px;
           border: 1px solid rgba(255,255,255,0.08);
           cursor: pointer;
           font-family: inherit;
           transition: all 0.15s;
+          white-space: nowrap;
         }
         .btn-fed:hover {
           color: rgba(240,239,232,0.6);
@@ -208,19 +263,19 @@ const LeaguePublic = () => {
         .lp-main {
           max-width: 900px;
           margin: 0 auto;
-          padding: 24px 20px 60px;
+          padding: 20px 16px 60px;
         }
         .lp-hero {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: space-between;
           gap: 16px;
-          margin-bottom: 24px;
+          margin-bottom: 20px;
           flex-wrap: wrap;
         }
         .lp-hero h1 {
           font-family: 'Barlow Condensed', sans-serif;
-          font-size: clamp(28px, 5vw, 44px);
+          font-size: clamp(24px, 5vw, 44px);
           font-weight: 900;
           text-transform: uppercase;
           letter-spacing: -0.02em;
@@ -230,7 +285,18 @@ const LeaguePublic = () => {
           font-style: normal;
           color: #DFFF00;
         }
-        /* Modal */
+        /* matches grid: 2 columnas en sm+ */
+        .matches-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        @media (min-width: 540px) {
+          .matches-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+        /* Modal federación */
         .fed-overlay {
           position: fixed;
           inset: 0;
@@ -239,14 +305,14 @@ const LeaguePublic = () => {
           align-items: center;
           justify-content: center;
           z-index: 100;
-          padding: 24px;
+          padding: 20px;
           backdrop-filter: blur(4px);
         }
         .fed-modal {
           background: #0f0f0f;
           border: 1px solid rgba(255,255,255,0.1);
           border-radius: 16px;
-          padding: 32px;
+          padding: 28px 24px;
           width: 100%;
           max-width: 340px;
           position: relative;
@@ -315,9 +381,10 @@ const LeaguePublic = () => {
           padding: 8px 12px;
           margin-top: 10px;
         }
-        @media (max-width: 480px) {
+        @media (max-width: 400px) {
           .lp-brand-tag { display: none; }
           .lp-brand-divider { display: none; }
+          .btn-portal span { display: none; }
         }
       `}</style>
 
@@ -331,7 +398,6 @@ const LeaguePublic = () => {
                 src="https://customer-assets.emergentagent.com/job_adivina-portal/artifacts/rexq8hh7_A56B5578-48F3-41C0-A247-75CAB5930CA5.png"
                 alt="ADIVINA"
                 onClick={() => navigate("/")}
-                style={{ cursor: "pointer" }}
               />
               <div className="lp-brand-divider" />
               <span className="lp-brand-tag">Liga EG</span>
@@ -341,7 +407,7 @@ const LeaguePublic = () => {
                 <Lock size={10} />Federación
               </button>
               <button className="btn-portal" onClick={() => navigate("/member-club")}>
-                Portal Clubes <ArrowRight size={12} />
+                <span>Portal Clubes</span> <ArrowRight size={12} />
               </button>
             </div>
           </div>
@@ -357,7 +423,7 @@ const LeaguePublic = () => {
             </div>
             {seasons.length > 1 && (
               <Select value={selectedSeason} onValueChange={handleSeasonChange}>
-                <SelectTrigger className="w-52 bg-[#121212] border-white/10 text-sm">
+                <SelectTrigger className="w-48 bg-[#121212] border-white/10 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#121212] border-white/10">
@@ -410,45 +476,15 @@ const LeaguePublic = () => {
                   </SelectContent>
                 </Select>
 
-                <div className="space-y-3">
+                <div className="matches-grid">
                   {filteredMatches.length === 0 ? (
-                    <div className="text-center py-12" style={{ color: "rgba(240,239,232,0.25)" }}>
+                    <div className="col-span-full text-center py-12" style={{ color: "rgba(240,239,232,0.25)" }}>
                       <Calendar size={36} style={{ margin: "0 auto 10px", opacity: 0.3 }} />
                       <p>No hay partidos en esta jornada</p>
                     </div>
-                  ) : filteredMatches.map(match => {
-                    const s = STATUS_CONFIG[match.status] || STATUS_CONFIG.scheduled;
-                    return (
-                      <div key={match.id} className="p-4 bg-[#121212] rounded-xl border border-white/5">
-                        <div className="flex items-center gap-2 mb-3 flex-wrap">
-                          <span style={{ fontSize: "11px", color: "rgba(240,239,232,0.3)" }}>
-                            {match.round?.name}
-                            {match.match_date && ` · ${new Date(match.match_date).toLocaleDateString("es-ES", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" })}`}
-                          </span>
-                          <Badge className={`${s.color} border-transparent text-xs ml-auto`}>{s.label}</Badge>
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-3 flex-1">
-                            <TeamLogo team={match.home_team} />
-                            <span className="font-bold text-sm truncate">{match.home_team?.name}</span>
-                          </div>
-                          <div className="shrink-0 text-center px-2">
-                            {match.status === "finished" ? (
-                              <span style={{ fontSize: "22px", fontWeight: 900 }}>
-                                {match.home_score}<span style={{ color: "rgba(240,239,232,0.2)", margin: "0 4px" }}>-</span>{match.away_score}
-                              </span>
-                            ) : (
-                              <span style={{ color: "rgba(240,239,232,0.25)", fontWeight: 700 }}>VS</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 flex-1 justify-end">
-                            <span className="font-bold text-sm truncate text-right">{match.away_team?.name}</span>
-                            <TeamLogo team={match.away_team} />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  ) : filteredMatches.map(match => (
+                    <MatchCardPublic key={match.id} match={match} />
+                  ))}
                 </div>
               </TabsContent>
 
@@ -468,7 +504,7 @@ const LeaguePublic = () => {
                       <table style={{ width: "100%", fontSize: "13px", borderCollapse: "collapse" }}>
                         <thead>
                           <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                            {["#","Equipo","PJ","G","E","P","DG","Pts"].map(h => (
+                            {["#", "Equipo", "PJ", "G", "E", "P", "DG", "Pts"].map(h => (
                               <th key={h} style={{
                                 padding: "10px 8px",
                                 textAlign: h === "Equipo" ? "left" : "center",
@@ -491,14 +527,14 @@ const LeaguePublic = () => {
                                   <span style={{ fontWeight: 600 }}>{row.team?.name}</span>
                                 </div>
                               </td>
-                              <td style={{ textAlign:"center", padding:"12px 8px", color:"rgba(240,239,232,0.5)" }}>{row.played}</td>
-                              <td style={{ textAlign:"center", padding:"12px 8px", color:"#4ade80" }}>{row.won}</td>
-                              <td style={{ textAlign:"center", padding:"12px 8px", color:"rgba(240,239,232,0.5)" }}>{row.drawn}</td>
-                              <td style={{ textAlign:"center", padding:"12px 8px", color:"#f87171" }}>{row.lost}</td>
-                              <td style={{ textAlign:"center", padding:"12px 8px", color:"rgba(240,239,232,0.5)" }}>
+                              <td style={{ textAlign: "center", padding: "12px 8px", color: "rgba(240,239,232,0.5)" }}>{row.played}</td>
+                              <td style={{ textAlign: "center", padding: "12px 8px", color: "#4ade80" }}>{row.won}</td>
+                              <td style={{ textAlign: "center", padding: "12px 8px", color: "rgba(240,239,232,0.5)" }}>{row.drawn}</td>
+                              <td style={{ textAlign: "center", padding: "12px 8px", color: "#f87171" }}>{row.lost}</td>
+                              <td style={{ textAlign: "center", padding: "12px 8px", color: "rgba(240,239,232,0.5)" }}>
                                 {row.goal_difference > 0 ? `+${row.goal_difference}` : row.goal_difference}
                               </td>
-                              <td style={{ textAlign:"center", padding:"12px 16px 12px 8px", fontWeight:900, fontSize:"18px", color:"#DFFF00" }}>{row.points}</td>
+                              <td style={{ textAlign: "center", padding: "12px 16px 12px 8px", fontWeight: 900, fontSize: "18px", color: "#DFFF00" }}>{row.points}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -517,18 +553,18 @@ const LeaguePublic = () => {
                   </div>
                 ) : news.map(item => (
                   <div key={item.id} className="p-4 bg-[#121212] rounded-xl border border-white/5">
-                    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:"10px", marginBottom:"8px" }}>
-                      <h3 style={{ fontWeight:700, color:"#DFFF00", fontSize:"15px" }}>{item.title}</h3>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px", marginBottom: "8px" }}>
+                      <h3 style={{ fontWeight: 700, color: "#DFFF00", fontSize: "15px" }}>{item.title}</h3>
                       <span style={{
-                        fontSize:"10px", padding:"3px 8px", borderRadius:"4px", whiteSpace:"nowrap",
+                        fontSize: "10px", padding: "3px 8px", borderRadius: "4px", whiteSpace: "nowrap",
                         background: item.priority === "high" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.05)",
                         color: item.priority === "high" ? "#f87171" : "rgba(240,239,232,0.3)",
                       }}>
                         {item.priority === "high" ? "URGENTE" : "INFO"}
                       </span>
                     </div>
-                    {item.content && <p style={{ color:"rgba(240,239,232,0.5)", fontSize:"13px", lineHeight:"1.6" }}>{item.content}</p>}
-                    <p style={{ color:"rgba(240,239,232,0.2)", fontSize:"11px", marginTop:"8px" }}>
+                    {item.content && <p style={{ color: "rgba(240,239,232,0.5)", fontSize: "13px", lineHeight: "1.6" }}>{item.content}</p>}
+                    <p style={{ color: "rgba(240,239,232,0.2)", fontSize: "11px", marginTop: "8px" }}>
                       {new Date(item.created_at).toLocaleDateString("es-ES")}
                     </p>
                   </div>
@@ -545,13 +581,13 @@ const LeaguePublic = () => {
           <div className="fed-modal">
             <button className="fed-modal-close" onClick={() => setFedModal(false)}>✕</button>
             <div style={{ marginBottom: "16px" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"6px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
                 <Shield size={18} color="#DFFF00" />
-                <span style={{ fontWeight:800, fontSize:"18px", fontFamily:"Barlow Condensed, sans-serif", textTransform:"uppercase" }}>
+                <span style={{ fontWeight: 800, fontSize: "18px", fontFamily: "Barlow Condensed, sans-serif", textTransform: "uppercase" }}>
                   Acceso Federación
                 </span>
               </div>
-              <p style={{ fontSize:"12px", color:"rgba(240,239,232,0.35)" }}>Panel de gestión de la liga</p>
+              <p style={{ fontSize: "12px", color: "rgba(240,239,232,0.35)" }}>Panel de gestión de la liga</p>
             </div>
             <label className="fed-label">Usuario</label>
             <input className="fed-input" type="text" value={fedUser}

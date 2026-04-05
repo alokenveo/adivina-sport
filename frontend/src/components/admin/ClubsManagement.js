@@ -87,187 +87,208 @@ const ClubsManagement = () => {
   };
 
   return (
-    <Card className="bg-[#121212] border-white/10">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle className="text-2xl">Gestión de Clubes</CardTitle>
-            <CardDescription className="text-zinc-400">Administra clubes e instituciones</CardDescription>
-          </div>
-          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <Button className="bg-[#DFFF00] text-black hover:bg-white w-full sm:w-auto shrink-0">
-                <Plus className="mr-2 h-4 w-4" />Agregar Club
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-[#121212] border-white/10 text-white">
-              <DialogHeader>
-                <DialogTitle>Nuevo Club</DialogTitle>
-                <DialogDescription className="text-zinc-400">Crea un nuevo club</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleAddClub} className="space-y-4">
-                <div>
-                  <Label>Nombre del Club</Label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="bg-[#0A0A0A] border-white/10 text-white mt-2"
-                  />
-                </div>
-                <div>
-                  <Label>Contraseña</Label>
-                  <Input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="bg-[#0A0A0A] border-white/10 text-white mt-2"
-                  />
-                </div>
-                <div>
-                  <Label>URL del Escudo (Opcional)</Label>
-                  <Input
-                    value={formData.crest_url}
-                    onChange={(e) => setFormData({ ...formData, crest_url: e.target.value })}
-                    className="bg-[#0A0A0A] border-white/10 text-white mt-2"
-                  />
-                </div>
-                <Button type="submit" className="w-full bg-[#DFFF00] text-black hover:bg-white">
-                  Crear Club
+    <>
+      {/* Estilos para hacer los modales responsive en móvil */}
+      <style>{`
+        .dialog-mobile-scroll {
+          max-height: 90dvh !important;
+          overflow-y: auto !important;
+          padding: 16px !important;
+          width: calc(100vw - 32px) !important;
+          max-width: 480px !important;
+        }
+        @media (min-width: 640px) {
+          .dialog-mobile-scroll {
+            padding: 24px !important;
+          }
+        }
+      `}</style>
+
+      <Card className="bg-[#121212] border-white/10">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="min-w-0">
+              <CardTitle className="text-2xl">Gestión de Clubes</CardTitle>
+              <CardDescription className="text-zinc-400">Administra clubes e instituciones</CardDescription>
+            </div>
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button className="bg-[#DFFF00] text-black hover:bg-white w-full sm:w-auto shrink-0">
+                  <Plus className="mr-2 h-4 w-4" />Agregar Club
                 </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        {loading ? (
-          <p className="text-center py-8 text-zinc-400">Cargando...</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-white/10">
-                  <TableHead className="text-zinc-400">NOMBRE</TableHead>
-                  <TableHead className="text-zinc-400 hidden sm:table-cell">ID</TableHead>
-                  <TableHead className="text-zinc-400">ESTADO</TableHead>
-                  <TableHead className="text-zinc-400 hidden md:table-cell">FECHA</TableHead>
-                  <TableHead className="text-zinc-400 text-right">ACCIONES</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clubs.map((club) => (
-                  <TableRow key={club.id} className="border-white/10">
-                    <TableCell className="font-medium">{club.name}</TableCell>
-                    <TableCell className="text-zinc-400 hidden sm:table-cell text-xs">{club.id}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        club.status === "active"
-                          ? "bg-green-500/20 text-green-400"
-                          : "bg-red-500/20 text-red-400"
-                      }`}>
-                        {club.status === "active" ? "ACTIVO" : "INACTIVO"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-zinc-400 hidden md:table-cell">
-                      {new Date(club.created_at).toLocaleDateString("es-ES")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        onClick={() => openEditDialog(club)}
-                        size="icon"
-                        variant="ghost"
-                        className="text-blue-400 hover:text-blue-300"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        onClick={() => handleDeleteClub(club.id, club.name)}
-                        size="icon"
-                        variant="ghost"
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+              </DialogTrigger>
+              <DialogContent className="dialog-mobile-scroll bg-[#121212] border-white/10 text-white">
+                <DialogHeader>
+                  <DialogTitle className="text-lg">Nuevo Club</DialogTitle>
+                  <DialogDescription className="text-zinc-400 text-sm">Crea un nuevo club</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleAddClub} className="space-y-3 mt-1">
+                  <div>
+                    <Label className="text-sm">Nombre del Club</Label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
+                      placeholder="Nombre del club"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Contraseña</Label>
+                    <Input
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
+                      placeholder="Contraseña de acceso"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">URL del Escudo <span className="text-zinc-500">(Opcional)</span></Label>
+                    <Input
+                      value={formData.crest_url}
+                      onChange={(e) => setFormData({ ...formData, crest_url: e.target.value })}
+                      className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <Button type="submit" className="w-full bg-[#DFFF00] text-black hover:bg-white mt-1">
+                    Crear Club
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
-        )}
-      </CardContent>
+        </CardHeader>
 
-      {/* Diálogo de edición con campo de estado */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="bg-[#121212] border-white/10 text-white">
-          <DialogHeader>
-            <DialogTitle>Editar Club</DialogTitle>
-            <DialogDescription className="text-zinc-400">
-              Modifica los datos del club. Deja la contraseña vacía para mantener la actual.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleEditClub} className="space-y-4">
-            <div>
-              <Label>Nombre del Club</Label>
-              <Input
-                value={editFormData.name}
-                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                className="bg-[#0A0A0A] border-white/10 text-white mt-2"
-              />
+        <CardContent>
+          {loading ? (
+            <p className="text-center py-8 text-zinc-400">Cargando...</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-white/10">
+                    <TableHead className="text-zinc-400">NOMBRE</TableHead>
+                    <TableHead className="text-zinc-400 hidden sm:table-cell">ID</TableHead>
+                    <TableHead className="text-zinc-400">ESTADO</TableHead>
+                    <TableHead className="text-zinc-400 hidden md:table-cell">FECHA</TableHead>
+                    <TableHead className="text-zinc-400 text-right">ACCIONES</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clubs.map((club) => (
+                    <TableRow key={club.id} className="border-white/10">
+                      <TableCell className="font-medium">{club.name}</TableCell>
+                      <TableCell className="text-zinc-400 hidden sm:table-cell text-xs">{club.id}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          club.status === "active"
+                            ? "bg-green-500/20 text-green-400"
+                            : "bg-red-500/20 text-red-400"
+                        }`}>
+                          {club.status === "active" ? "ACTIVO" : "INACTIVO"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-zinc-400 hidden md:table-cell">
+                        {new Date(club.created_at).toLocaleDateString("es-ES")}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          onClick={() => openEditDialog(club)}
+                          size="icon"
+                          variant="ghost"
+                          className="text-blue-400 hover:text-blue-300"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteClub(club.id, club.name)}
+                          size="icon"
+                          variant="ghost"
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
-            <div>
-              <Label>Nueva Contraseña (dejar vacío para mantener actual)</Label>
-              <Input
-                type="password"
-                value={editFormData.password}
-                onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
-                className="bg-[#0A0A0A] border-white/10 text-white mt-2"
-              />
-            </div>
-            <div>
-              <Label>URL del Escudo</Label>
-              <Input
-                value={editFormData.crest_url}
-                onChange={(e) => setEditFormData({ ...editFormData, crest_url: e.target.value })}
-                className="bg-[#0A0A0A] border-white/10 text-white mt-2"
-              />
-            </div>
-            <div>
-              <Label>Estado del Club</Label>
-              <Select
-                value={editFormData.status}
-                onValueChange={(val) => setEditFormData({ ...editFormData, status: val })}
-              >
-                <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-[#121212] border-white/10">
-                  <SelectItem value="active" className="text-white">
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
-                      Activo
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="inactive" className="text-white">
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
-                      Inactivo
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-zinc-500 mt-1">
+          )}
+        </CardContent>
+
+        {/* Diálogo de edición */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="dialog-mobile-scroll bg-[#121212] border-white/10 text-white">
+            <DialogHeader>
+              <DialogTitle className="text-lg">Editar Club</DialogTitle>
+              <DialogDescription className="text-zinc-400 text-sm">
+                Deja la contraseña vacía para mantener la actual.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleEditClub} className="space-y-3 mt-1">
+              <div>
+                <Label className="text-sm">Nombre del Club</Label>
+                <Input
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
+                />
+              </div>
+              <div>
+                <Label className="text-sm">Nueva Contraseña <span className="text-zinc-500">(vacío = mantener actual)</span></Label>
+                <Input
+                  type="password"
+                  value={editFormData.password}
+                  onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                  className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
+                />
+              </div>
+              <div>
+                <Label className="text-sm">URL del Escudo</Label>
+                <Input
+                  value={editFormData.crest_url}
+                  onChange={(e) => setEditFormData({ ...editFormData, crest_url: e.target.value })}
+                  className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
+                />
+              </div>
+              <div>
+                <Label className="text-sm">Estado del Club</Label>
+                <Select
+                  value={editFormData.status}
+                  onValueChange={(val) => setEditFormData({ ...editFormData, status: val })}
+                >
+                  <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#121212] border-white/10">
+                    <SelectItem value="active" className="text-white">
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+                        Activo
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="inactive" className="text-white">
+                      <span className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+                        Inactivo
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-zinc-500 mt-1">
                 Los clubes inactivos no aparecerán en el login de miembros.
-              </p>
-            </div>
-            <Button type="submit" className="w-full bg-[#DFFF00] text-black hover:bg-white">
-              Actualizar Club
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </Card>
+                </p>
+              </div>
+              <Button type="submit" className="w-full bg-[#DFFF00] text-black hover:bg-white mt-1">
+                Actualizar Club
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </Card>
+    </>
   );
 };
 

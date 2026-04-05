@@ -1,8 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/App";
+
+// ── URLs de recursos en Supabase Storage ──────────────────────────────────────
+// Sube estos archivos al bucket "recursos" en Supabase y reemplaza las URLs:
+const SUPABASE_RECURSOS_URL = process.env.REACT_APP_SUPABASE_RECURSOS_URL || "";
+// Ejemplo: "https://xxxx.supabase.co/storage/v1/object/public/recursos"
+const VIDEO_1_URL    = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/v_f_1.mp4`      : "/v_f_1.mp4";
+const VIDEO_2_URL    = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/v_f_2.mp4`      : "/v_f_2.mp4";
+const FONDO_GYM_URL  = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/fondo_gym.jpg`  : "/fondo_gym.jpg";
+const LOGO_URL       = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/logo_adivina.png` : "https://customer-assets.emergentagent.com/job_adivina-portal/artifacts/rexq8hh7_A56B5578-48F3-41C0-A247-75CAB5930CA5.png";
+// ─────────────────────────────────────────────────────────────────────────────
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user, admin, authLoaded } = useAuth();
   const vid1Ref = useRef(null);
   const vid2Ref = useRef(null);
   const [loaded, setLoaded] = useState(false);
@@ -11,6 +23,14 @@ const Landing = () => {
     const t = setTimeout(() => setLoaded(true), 80);
     return () => clearTimeout(t);
   }, []);
+
+  // Si el auth ya cargó y hay sesión activa, el botón lleva directo al destino
+  const handlePortalClick = () => {
+    if (!authLoaded) { navigate("/member-club"); return; }
+    if (admin)       { navigate("/admin/dashboard");  return; }
+    if (user)        { navigate("/club/dashboard");   return; }
+    navigate("/member-club");
+  };
 
   return (
     <>
@@ -36,7 +56,7 @@ const Landing = () => {
         .bg-gym {
           position: absolute;
           inset: 0;
-          background-image: url('/fondo_gym.jpg');
+          background-image: url('${FONDO_GYM_URL}');
           background-size: cover;
           background-position: center;
           z-index: 0;
@@ -105,31 +125,6 @@ const Landing = () => {
             rgba(5,5,5,0.6) 100%
           );
           z-index: 2;
-        }
-
-        /* Fallback si no hay vídeo */
-        .box-left-fallback {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #0a0a0a 0%, #111 100%);
-          z-index: 1;
-        }
-        .box-left-fallback-inner {
-          width: 120px;
-          height: 120px;
-          border-radius: 50%;
-          border: 1px solid rgba(223,255,0,0.15);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .box-left-fallback-inner svg {
-          width: 48px;
-          height: 48px;
-          opacity: 0.2;
         }
 
         /* label live */
@@ -314,31 +309,6 @@ const Landing = () => {
         }
         .btn-primary:active { transform: translateY(0); }
 
-        .btn-secondary {
-          background: transparent;
-          color: #F0EFE8;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          padding: 11px 22px;
-          border: 1.5px solid rgba(240,239,232,0.2);
-          border-radius: 4px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          transition: border-color 0.15s, background 0.15s, transform 0.1s;
-          font-family: 'Barlow Condensed', inherit;
-        }
-        .btn-secondary:hover {
-          border-color: rgba(223,255,0,0.45);
-          color: #DFFF00;
-          background: rgba(223,255,0,0.04);
-          transform: translateY(-1px);
-        }
-        .btn-secondary:active { transform: translateY(0); }
-
         .btn-arrow {
           font-size: 16px;
           line-height: 1;
@@ -355,22 +325,6 @@ const Landing = () => {
         .corner-tr { top: 0; right: 0; border-top: 2px solid rgba(223,255,0,0.4); border-right: 2px solid rgba(223,255,0,0.4); }
         .corner-bl { bottom: 0; left: 0; border-bottom: 2px solid rgba(223,255,0,0.4); border-left: 2px solid rgba(223,255,0,0.4); }
         .corner-br { bottom: 0; right: 0; border-bottom: 2px solid rgba(223,255,0,0.4); border-right: 2px solid rgba(223,255,0,0.4); }
-
-        /* LOGO superior */
-        .top-logo {
-          position: absolute;
-          top: 22px;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 30;
-          opacity: ${loaded ? "0.9" : "0"};
-          transition: opacity 0.6s 0.3s;
-        }
-        .top-logo img {
-          height: 28px;
-          filter: brightness(0) invert(1);
-          opacity: 0.55;
-        }
 
         /* RESPONSIVE — móvil */
         @media (max-width: 540px) {
@@ -403,10 +357,9 @@ const Landing = () => {
           .box-content { padding: 32px 24px 48px; }
           .headline { font-size: 32px; }
           .btns { flex-direction: column; }
-          .btn-primary, .btn-secondary { justify-content: center; padding: 14px 24px; }
+          .btn-primary { justify-content: center; padding: 14px 24px; }
           .corner-tl, .corner-tr, .corner-bl, .corner-br { display: none; }
           .slogan-mask span { font-size: 30px; }
-          .top-logo { display: none; }
         }
 
         /* RESPONSIVE — tablet */
@@ -437,18 +390,10 @@ const Landing = () => {
 
           {/* ── IZQUIERDA ── */}
           <div className="box-left">
-            <video
-              ref={vid1Ref}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-            >
-              <source src="/v_f_1.mp4" type="video/mp4" />
+            <video ref={vid1Ref} autoPlay muted loop playsInline preload="auto">
+              <source src={VIDEO_1_URL} type="video/mp4" />
             </video>
             <div className="box-left-overlay" />
-
             <div className="live-tag">
               <div className="live-dot" />
               <span className="live-text">Adivina Sport</span>
@@ -460,15 +405,8 @@ const Landing = () => {
 
           {/* ── DERECHA ── */}
           <div className="box-right">
-            <video
-              ref={vid2Ref}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-            >
-              <source src="/v_f_2.mp4" type="video/mp4" />
+            <video ref={vid2Ref} autoPlay muted loop playsInline preload="auto">
+              <source src={VIDEO_2_URL} type="video/mp4" />
             </video>
             <div className="box-right-overlay" />
 
@@ -486,10 +424,7 @@ const Landing = () => {
                 para clubes e instituciones
               </div>
               <div className="btns">
-                <button
-                  className="btn-primary"
-                  onClick={() => navigate("/member-club")}
-                >
+                <button className="btn-primary" onClick={handlePortalClick}>
                   ACCEDER AL PORTAL DE CLUBES
                   <span className="btn-arrow">›</span>
                 </button>
