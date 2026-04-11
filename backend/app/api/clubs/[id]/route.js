@@ -14,6 +14,7 @@ export async function PUT(request, { params }) {
     if (body.status)                      update.status = body.status
     if (body.sport)                       update.sport = body.sport
     if (body.nav_sections !== undefined)  update.nav_sections = body.nav_sections
+    if (body.institution_type)            update.institution_type = body.institution_type
     if (body.password)                    update.password_hash = await bcrypt.hash(body.password, 12)
 
     const { data, error } = await supabaseAdmin

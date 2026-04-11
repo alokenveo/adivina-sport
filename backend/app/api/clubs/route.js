@@ -37,7 +37,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json()
-    const { name, password, crest_url, sport } = body
+    const { name, password, crest_url, sport, institution_type } = body
 
     if (!name || !password) {
       return NextResponse.json({ error: 'name y password requeridos' }, { status: 400 })
@@ -64,6 +64,7 @@ export async function POST(request) {
         status: 'active',
         sport: selectedSport,
         nav_sections: navSections,
+        institution_type: institution_type || 'club'
       }])
       .select('id, name, crest_url, status, sport, nav_sections, created_at')
       .single()
