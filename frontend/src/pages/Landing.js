@@ -600,10 +600,6 @@ const Landing = () => {
                   Resultados, clasificación y noticias en tiempo real
                 </p>
               </div>
-              <button className="btn-fed-small" onClick={() => setFedModal(true)}>
-                <Lock size={10} />
-                Acceso Federación
-              </button>
             </div>
 
             <LeagueContent isEmbedded={true} />

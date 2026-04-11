@@ -24,23 +24,23 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 // ── Constantes ────────────────────────────────────────────────────────────────
 const STATUS_LABELS = {
   scheduled: { label: "Programado", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-  live:      { label: "En Juego",   color: "bg-green-500/20 text-green-400 border-green-500/30" },
-  finished:  { label: "Finalizado", color: "bg-zinc-700/50 text-zinc-400 border-zinc-600/30" },
-  postponed: { label: "Aplazado",   color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+  live: { label: "En Juego", color: "bg-green-500/20 text-green-400 border-green-500/30" },
+  finished: { label: "Finalizado", color: "bg-zinc-700/50 text-zinc-400 border-zinc-600/30" },
+  postponed: { label: "Aplazado", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
 };
 
 const PRIORITY_CONFIG = {
-  normal: { label: "Normal",  color: "bg-zinc-700/50 text-zinc-400" },
-  high:   { label: "Alta",    color: "bg-orange-500/20 text-orange-400" },
+  normal: { label: "Normal", color: "bg-zinc-700/50 text-zinc-400" },
+  high: { label: "Alta", color: "bg-orange-500/20 text-orange-400" },
   urgent: { label: "Urgente", color: "bg-red-500/20 text-red-400" },
 };
 
 const SPORTS_LABELS = {
-  football:   "⚽ Fútbol",
+  football: "⚽ Fútbol",
   basketball: "🏀 Baloncesto",
-  futsal:     "🥅 Fútbol Sala",
+  futsal: "🥅 Fútbol Sala",
   volleyball: "🏐 Voleibol",
-  other:      "🏅 Otro",
+  other: "🏅 Otro",
 };
 
 const formatUTC = (dateStr) => {
@@ -78,41 +78,41 @@ const StatCard = ({ label, value, sub, color = "text-[#DFFF00]", icon: Icon }) =
 
 // ── Portal principal ──────────────────────────────────────────────────────────
 const FederationPortal = () => {
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [activeSection, setActiveSection] = useState("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Data
-  const [seasons,   setSeasons]   = useState([]);
-  const [teams,     setTeams]     = useState([]);
-  const [allClubs,  setAllClubs]  = useState([]);
-  const [members,   setMembers]   = useState([]);
-  const [rounds,    setRounds]    = useState([]);
-  const [matches,   setMatches]   = useState([]);
+  const [seasons, setSeasons] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [allClubs, setAllClubs] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [rounds, setRounds] = useState([]);
+  const [matches, setMatches] = useState([]);
   const [standings, setStandings] = useState([]);
-  const [leagueNews,setLeagueNews]= useState([]);
+  const [leagueNews, setLeagueNews] = useState([]);
   const [circulars, setCirculars] = useState([]);
   const [activeSeason, setActiveSeason] = useState(null);
   const [filterRound, setFilterRound] = useState("all");
 
   // Dialogs
-  const [matchDialog,  setMatchDialog]  = useState(false);
+  const [matchDialog, setMatchDialog] = useState(false);
   const [resultDialog, setResultDialog] = useState(false);
-  const [teamDialog,   setTeamDialog]   = useState(false);
-  const [roundDialog,  setRoundDialog]  = useState(false);
-  const [newsDialog,   setNewsDialog]   = useState(false);
+  const [teamDialog, setTeamDialog] = useState(false);
+  const [roundDialog, setRoundDialog] = useState(false);
+  const [newsDialog, setNewsDialog] = useState(false);
   const [circularDialog, setCircularDialog] = useState(false);
   const [affiliateDialog, setAffiliateDialog] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState(null);
-  const [editingTeam,   setEditingTeam]   = useState(null);
+  const [editingTeam, setEditingTeam] = useState(null);
 
   // Forms
-  const [matchForm,  setMatchForm]  = useState({ round_id: "", home_team_id: "", away_team_id: "", match_date: "", venue: "", notes: "" });
+  const [matchForm, setMatchForm] = useState({ round_id: "", home_team_id: "", away_team_id: "", match_date: "", venue: "", notes: "" });
   const [resultForm, setResultForm] = useState({ home_score: "", away_score: "", status: "finished", home_scorers: "", away_scorers: "" });
-  const [teamForm,   setTeamForm]   = useState({ name: "", short_name: "", city: "", stadium: "", adivina_club_id: "" });
-  const [roundForm,  setRoundForm]  = useState({ number: "", name: "", date_start: "", date_end: "" });
-  const [newsForm,   setNewsForm]   = useState({ title: "", content: "", priority: "normal" });
+  const [teamForm, setTeamForm] = useState({ name: "", short_name: "", city: "", stadium: "", adivina_club_id: "" });
+  const [roundForm, setRoundForm] = useState({ number: "", name: "", date_start: "", date_end: "" });
+  const [newsForm, setNewsForm] = useState({ title: "", content: "", priority: "normal" });
   const [circularForm, setCircularForm] = useState({ title: "", content: "", priority: "normal" });
   const [affiliateForm, setAffiliateForm] = useState({ club_id: "", sport: "football", division: "" });
   const [logoFile, setLogoFile] = useState(null);
@@ -133,10 +133,10 @@ const FederationPortal = () => {
     }
   }, []);
 
-  const fetchRounds   = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/rounds?season_id=${sid}`);   setRounds(r.data); };
-  const fetchMatches  = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/matches?season_id=${sid}`);  setMatches(r.data); };
-  const fetchStandings= async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/standings?season_id=${sid}`);setStandings(r.data); };
-  const fetchLeagueNews=async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/news?season_id=${sid}`);     setLeagueNews(r.data); };
+  const fetchRounds = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/rounds?season_id=${sid}`); setRounds(r.data); };
+  const fetchMatches = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/matches?season_id=${sid}`); setMatches(r.data); };
+  const fetchStandings = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/standings?season_id=${sid}`); setStandings(r.data); };
+  const fetchLeagueNews = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/news?season_id=${sid}`); setLeagueNews(r.data); };
 
   const fetchTeams = useCallback(async () => {
     const r = await axios.get(`${BACKEND_URL}/api/league/teams`);
@@ -196,7 +196,7 @@ const FederationPortal = () => {
       await axios.put(`${BACKEND_URL}/api/league/matches/${selectedMatch.id}`, {
         home_score: parseInt(resultForm.home_score),
         away_score: parseInt(resultForm.away_score),
-        status:     resultForm.status,
+        status: resultForm.status,
         home_scorers: parse(resultForm.home_scorers),
         away_scorers: parse(resultForm.away_scorers),
       });
@@ -331,20 +331,20 @@ const FederationPortal = () => {
   };
 
   const filteredMatches = filterRound === "all" ? matches : matches.filter(m => m.round_id === filterRound);
-  const finishedCount   = matches.filter(m => m.status === "finished").length;
-  const pendingCount    = matches.filter(m => m.status === "scheduled").length;
+  const finishedCount = matches.filter(m => m.status === "finished").length;
+  const pendingCount = matches.filter(m => m.status === "scheduled").length;
 
   // ── Nav items ──
   const navItems = [
-    { key: "home",             icon: Home,      label: "Inicio" },
-    { key: "league",           icon: Calendar,  label: "Partidos" },
-    { key: "standings",        icon: Trophy,    label: "Clasificación" },
-    { key: "teams",            icon: Swords,    label: "Equipos" },
-    { key: "rounds",           icon: Clock,     label: "Jornadas" },
-    { key: "news",             icon: Newspaper, label: "Noticias" },
-    { key: "affiliated-clubs", icon: Users,     label: "Clubes Afiliados" },
-    { key: "circulars",        icon: Send,      label: "Circulares" },
-    { key: "stats",            icon: BarChart3, label: "Estadísticas" },
+    { key: "home", icon: Home, label: "Inicio" },
+    { key: "league", icon: Calendar, label: "Partidos" },
+    { key: "standings", icon: Trophy, label: "Clasificación" },
+    { key: "teams", icon: Swords, label: "Equipos" },
+    { key: "rounds", icon: Clock, label: "Jornadas" },
+    { key: "news", icon: Newspaper, label: "Noticias" },
+    { key: "affiliated-clubs", icon: Users, label: "Clubes Afiliados" },
+    { key: "circulars", icon: Send, label: "Circulares" },
+    { key: "stats", icon: BarChart3, label: "Estadísticas" },
   ];
 
   const handleLogout = () => { logout(); navigate("/"); };
@@ -357,11 +357,10 @@ const FederationPortal = () => {
           <button
             key={key}
             onClick={() => { setActiveSection(key); onClose?.(); }}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left w-full ${
-              active
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left w-full ${active
                 ? "bg-[#DFFF00]/10 text-[#DFFF00] border border-[#DFFF00]/20"
                 : "text-zinc-400 hover:text-white hover:bg-white/5"
-            }`}
+              }`}
           >
             <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[#DFFF00]" : ""}`} />
             {label}
@@ -382,16 +381,16 @@ const FederationPortal = () => {
   // ── Render secciones ──
   const renderSection = () => {
     switch (activeSection) {
-      case "home":      return <SectionHome />;
-      case "league":    return <SectionMatches />;
+      case "home": return <SectionHome />;
+      case "league": return <SectionMatches />;
       case "standings": return <SectionStandings />;
-      case "teams":     return <SectionTeams />;
-      case "rounds":    return <SectionRounds />;
-      case "news":      return <SectionNews />;
+      case "teams": return <SectionTeams />;
+      case "rounds": return <SectionRounds />;
+      case "news": return <SectionNews />;
       case "affiliated-clubs": return <SectionAffiliatedClubs />;
       case "circulars": return <SectionCirculars />;
-      case "stats":     return <SectionStats />;
-      default:          return <SectionHome />;
+      case "stats": return <SectionStats />;
+      default: return <SectionHome />;
     }
   };
 
@@ -409,10 +408,10 @@ const FederationPortal = () => {
         </div>
       )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Clubes afiliados" value={members.length}    icon={Users}    />
-        <StatCard label="Equipos en liga"  value={teams.length}      icon={Swords}   />
-        <StatCard label="Partidos jugados" value={finishedCount}     icon={Check} color="text-green-400" />
-        <StatCard label="Por jugar"        value={pendingCount}      icon={Calendar} color="text-blue-400" />
+        <StatCard label="Clubes afiliados" value={members.length} icon={Users} />
+        <StatCard label="Equipos en liga" value={teams.length} icon={Swords} />
+        <StatCard label="Partidos jugados" value={finishedCount} icon={Check} color="text-green-400" />
+        <StatCard label="Por jugar" value={pendingCount} icon={Calendar} color="text-blue-400" />
       </div>
 
       {/* Últimos resultados */}
@@ -438,12 +437,12 @@ const FederationPortal = () => {
         <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3">Acciones rápidas</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
-            { label: "Nuevo partido",   icon: Calendar,  action: () => { setActiveSection("league");    setMatchDialog(true);    } },
-            { label: "Añadir resultado",icon: Check,     action: () => setActiveSection("league") },
-            { label: "Nueva jornada",   icon: Clock,     action: () => { setActiveSection("rounds");    setRoundDialog(true);    } },
-            { label: "Nuevo equipo",    icon: Swords,    action: () => { setActiveSection("teams");     setTeamDialog(true);     } },
-            { label: "Publicar noticia",icon: Newspaper, action: () => { setActiveSection("news");      setNewsDialog(true);     } },
-            { label: "Enviar circular", icon: Send,      action: () => { setActiveSection("circulars"); setCircularDialog(true); } },
+            { label: "Nuevo partido", icon: Calendar, action: () => { setActiveSection("league"); setMatchDialog(true); } },
+            { label: "Añadir resultado", icon: Check, action: () => setActiveSection("league") },
+            { label: "Nueva jornada", icon: Clock, action: () => { setActiveSection("rounds"); setRoundDialog(true); } },
+            { label: "Nuevo equipo", icon: Swords, action: () => { setActiveSection("teams"); setTeamDialog(true); } },
+            { label: "Publicar noticia", icon: Newspaper, action: () => { setActiveSection("news"); setNewsDialog(true); } },
+            { label: "Enviar circular", icon: Send, action: () => { setActiveSection("circulars"); setCircularDialog(true); } },
           ].map(({ label, icon: Icon, action }) => (
             <button key={label} onClick={action}
               className="flex items-center gap-2 p-3 bg-[#121212] border border-white/5 hover:border-[#DFFF00]/20 rounded-xl text-sm text-zinc-400 hover:text-white transition-all text-left">
@@ -541,7 +540,7 @@ const FederationPortal = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">
-                  {["#","Equipo","PJ","G","E","P","GF","GC","DG","Pts"].map(h => (
+                  {["#", "Equipo", "PJ", "G", "E", "P", "GF", "GC", "DG", "Pts"].map(h => (
                     <th key={h} className={`py-3 px-2 text-[10px] font-bold uppercase tracking-wider text-zinc-600 ${h === "Equipo" ? "text-left pl-4" : "text-center"}`}>{h}</th>
                   ))}
                 </tr>
@@ -578,7 +577,7 @@ const FederationPortal = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-black uppercase">Equipos ({teams.length})</h2>
-        <Button onClick={() => { setEditingTeam(null); setLogoFile(null); setTeamForm({ name:"",short_name:"",city:"",stadium:"",adivina_club_id:"" }); setTeamDialog(true); }}
+        <Button onClick={() => { setEditingTeam(null); setLogoFile(null); setTeamForm({ name: "", short_name: "", city: "", stadium: "", adivina_club_id: "" }); setTeamDialog(true); }}
           size="sm" className="bg-[#DFFF00] text-black hover:bg-white">
           <Plus className="h-4 w-4 mr-1" />Nuevo equipo
         </Button>
@@ -598,7 +597,7 @@ const FederationPortal = () => {
               )}
             </div>
             <Button size="icon" variant="ghost" className="text-zinc-400 hover:text-white h-8 w-8"
-              onClick={() => { setEditingTeam(team); setLogoFile(null); setTeamForm({ name:team.name,short_name:team.short_name||"",city:team.city||"",stadium:team.stadium||"",adivina_club_id:team.adivina_club_id||"" }); setTeamDialog(true); }}>
+              onClick={() => { setEditingTeam(team); setLogoFile(null); setTeamForm({ name: team.name, short_name: team.short_name || "", city: team.city || "", stadium: team.stadium || "", adivina_club_id: team.adivina_club_id || "" }); setTeamDialog(true); }}>
               <Edit className="h-4 w-4" />
             </Button>
           </div>
@@ -632,8 +631,8 @@ const FederationPortal = () => {
                 <span className="font-bold">{round.name}</span>
                 <Badge className={
                   round.status === "finished" ? "bg-zinc-500/20 text-zinc-400 border-zinc-500/30 border" :
-                  round.status === "ongoing"  ? "bg-green-500/20 text-green-400 border-green-500/30 border" :
-                  "bg-blue-500/20 text-blue-400 border-blue-500/30 border"
+                    round.status === "ongoing" ? "bg-green-500/20 text-green-400 border-green-500/30 border" :
+                      "bg-blue-500/20 text-blue-400 border-blue-500/30 border"
                 }>
                   {round.status === "finished" ? "Finalizada" : round.status === "ongoing" ? "En curso" : "Próxima"}
                 </Badge>
@@ -650,7 +649,7 @@ const FederationPortal = () => {
               {/* Mini barra de progreso */}
               <div className="mt-2 h-1 bg-white/5 rounded-full overflow-hidden">
                 <div className="h-full bg-[#DFFF00] rounded-full transition-all"
-                  style={{ width: roundMatches.length ? `${(done/roundMatches.length)*100}%` : "0%" }} />
+                  style={{ width: roundMatches.length ? `${(done / roundMatches.length) * 100}%` : "0%" }} />
               </div>
             </div>
           );
@@ -722,7 +721,7 @@ const FederationPortal = () => {
               <img src={m.club.crest_url} alt="" className="w-10 h-10 rounded-full object-cover border border-white/10 shrink-0" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500 font-bold text-xs shrink-0">
-                {m.club?.name?.substring(0,2).toUpperCase()}
+                {m.club?.name?.substring(0, 2).toUpperCase()}
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -806,10 +805,10 @@ const FederationPortal = () => {
       <div className="space-y-6">
         <h2 className="text-xl font-black uppercase">Estadísticas</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard label="Total partidos"    value={matches.length}          icon={Calendar} />
-          <StatCard label="Jugados"           value={finishedCount}           icon={Check}    color="text-green-400" />
-          <StatCard label="Goles totales"     value={matches.reduce((a, m) => a + (m.home_score||0) + (m.away_score||0), 0)} icon={Trophy} />
-          <StatCard label="Equipos"           value={teams.length}            icon={Swords}   />
+          <StatCard label="Total partidos" value={matches.length} icon={Calendar} />
+          <StatCard label="Jugados" value={finishedCount} icon={Check} color="text-green-400" />
+          <StatCard label="Goles totales" value={matches.reduce((a, m) => a + (m.home_score || 0) + (m.away_score || 0), 0)} icon={Trophy} />
+          <StatCard label="Equipos" value={teams.length} icon={Swords} />
         </div>
         {topScorers.length > 0 && (
           <div>
@@ -829,7 +828,7 @@ const FederationPortal = () => {
           <div>
             <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3">Rendimiento por equipo</h3>
             <div className="space-y-2">
-              {standings.slice(0,5).map(row => (
+              {standings.slice(0, 5).map(row => (
                 <div key={row.id} className="flex items-center gap-3 p-3 bg-[#121212] rounded-xl border border-white/5">
                   <TeamLogo team={row.team} size="sm" />
                   <span className="flex-1 font-medium text-sm truncate">{row.team?.name}</span>
@@ -854,74 +853,81 @@ const FederationPortal = () => {
   return (
     <div className="min-h-screen bg-[#050505] text-white flex flex-col">
       {/* Header móvil + escritorio */}
-      <header className="border-b border-white/10 bg-[#080808]/90 backdrop-blur-xl sticky top-0 z-50">
-        <div className="flex items-center gap-3 px-4 py-3">
-          {/* Hamburger — solo móvil */}
-          <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 lg:hidden shrink-0">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="bg-[#080808] border-white/10 w-64 p-0">
-              <SheetTitle className="sr-only">Menú federación</SheetTitle>
-              <div className="p-5 border-b border-white/10">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center shrink-0">
-                    <Shield className="h-4 w-4 text-white" />
-                  </div>
-                  <p className="font-bold text-sm truncate">{user?.club_name}</p>
+      <header className="border-b border-white/10 bg-[#050505]/80 backdrop-blur-xl sticky top-0 z-50">
+        <div className="px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="bg-[#050505] border-white/10 w-64 p-0">
+                <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
+                <div className="p-6 border-b border-white/10">
+                  <img
+                    src="https://customer-assets.emergentagent.com/job_adivina-portal/artifacts/rexq8hh7_A56B5578-48F3-41C0-A247-75CAB5930CA5.png"
+                    alt="ADIVINA"
+                    className="h-10"
+                  />
+                  <span className="mt-3 inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-green-500/10 text-green-400">
+                    🛡️ Federación
+                  </span>
                 </div>
-                <p className="text-xs text-zinc-600 pl-9">Portal Federativo</p>
-              </div>
-              <NavMenu onClose={() => setMobileMenuOpen(false)} />
-            </SheetContent>
-          </Sheet>
+                <nav className="p-4">
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = activeSection === item.key;
+                    return (
+                      <Button
+                        key={item.key}
+                        onClick={() => { setActiveSection(item.key); setMobileMenuOpen(false); }}
+                        variant="ghost"
+                        className={`w-full justify-start mb-2 text-white hover:bg-white/5 ${active ? "bg-white/5 text-[#DFFF00] border-r-2 border-[#DFFF00]" : ""
+                          }`}
+                      >
+                        <Icon className="mr-3 h-5 w-5" />
+                        {item.label}
+                      </Button>
+                    );
+                  })}
+                  <div className="mt-8 pt-4 border-t border-white/10">
+                    <Button
+                      onClick={handleLogout}
+                      variant="ghost"
+                      className="w-full justify-start text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                    >
+                      <LogOut className="mr-3 h-5 w-5" />
+                      Cerrar Sesión
+                    </Button>
+                  </div>
+                </nav>
+              </SheetContent>
+            </Sheet>
 
-          {/* Logo / nombre */}
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center shrink-0">
-              <Shield className="h-4 w-4 text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-bold text-sm leading-tight truncate">{user?.club_name}</p>
-              <p className="text-[10px] text-zinc-600 leading-tight hidden sm:block">Portal Federativo</p>
+            <img
+              src="https://customer-assets.emergentagent.com/job_adivina-portal/artifacts/rexq8hh7_A56B5578-48F3-41C0-A247-75CAB5930CA5.png"
+              alt="ADIVINA"
+              className="h-10"
+            />
+            <div className="border-l border-white/20 pl-4 hidden md:block">
+              <p className="text-xs text-zinc-500 uppercase tracking-wide">Portal Federativo</p>
             </div>
           </div>
 
-          {/* Breadcrumb en escritorio */}
-          {currentNav && (
-            <div className="hidden lg:flex items-center gap-2 ml-2 text-zinc-500">
-              <ChevronRight className="h-4 w-4" />
-              <currentNav.icon className="h-4 w-4" />
-              <span className="text-sm">{currentNav.label}</span>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm font-bold">{user?.club_name}</p>
+              <p className="text-xs text-green-400">🛡️ Federación</p>
             </div>
-          )}
-
-          {/* Temporada activa */}
-          {activeSeason && (
-            <div className="ml-auto flex items-center gap-1.5 px-2 py-1 bg-green-500/10 border border-green-500/20 rounded-full shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-              <span className="text-[10px] font-semibold text-green-400 hidden sm:block">{activeSeason.name}</span>
-            </div>
-          )}
-
-          {/* Logout escritorio */}
-          <Button onClick={handleLogout} variant="ghost" size="icon"
-            className="text-zinc-500 hover:text-red-400 ml-2 shrink-0" title="Cerrar sesión">
-            <LogOut className="h-4 w-4" />
-          </Button>
+            {user?.crest_url && (
+              <img src={user.crest_url} alt="Escudo" className="h-12 w-12 rounded-full border border-white/20" />
+            )}
+          </div>
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar escritorio */}
-        <aside className="hidden lg:flex flex-col w-56 xl:w-64 border-r border-white/5 bg-[#080808] shrink-0">
-          <div className="flex-1 overflow-y-auto">
-            <NavMenu />
-          </div>
-        </aside>
-
         {/* Contenido principal */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">

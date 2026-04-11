@@ -12,7 +12,6 @@ import ClubProfile from "@/pages/ClubProfile";
 import ClubOrders from "@/pages/ClubOrders";
 import ClubLeague from "@/pages/ClubLeague";
 import AdminDashboard from "@/pages/AdminDashboard";
-import LeaguePublic from "@/pages/LeaguePublic";
 import FederationPortal from "@/pages/FederationPortal";
 import { Toaster } from "@/components/ui/sonner";
 import "@/App.css";
@@ -83,7 +82,6 @@ function App() {
           <Routes>
             {/* ── Públicas ── */}
             <Route path="/"     element={<Landing />} />
-            <Route path="/liga" element={<LeaguePublic />} />
 
             {/* ── Auth ── */}
             <Route path="/member-club" element={<MemberLogin />} />
