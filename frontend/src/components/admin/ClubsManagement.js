@@ -20,6 +20,11 @@ const SPORTS = [
   { value: "other",      label: "🏅 Otro deporte" },
 ];
 
+const INSTITUTION_TYPES = [
+  { value: "club",       label: "🏟️ Club deportivo" },
+  { value: "federation", label: "🛡️ Federación" },
+];
+
 const SPORT_LABEL = (value) => SPORTS.find(s => s.value === value)?.label || value;
 
 const ClubsManagement = () => {
@@ -28,8 +33,8 @@ const ClubsManagement = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingClub, setEditingClub] = useState(null);
-  const [formData, setFormData] = useState({ name: "", password: "", crest_url: "", sport: "football" });
-  const [editFormData, setEditFormData] = useState({ name: "", password: "", crest_url: "", status: "active", sport: "football" });
+  const [formData, setFormData] = useState({ name: "", password: "", crest_url: "", sport: "football", institution_type: "club" });
+  const [editFormData, setEditFormData] = useState({ name: "", password: "", crest_url: "", status: "active", sport: "football", institution_type: "club" });
 
   useEffect(() => { fetchClubs(); }, []);
 
@@ -54,7 +59,7 @@ const ClubsManagement = () => {
       await axios.post(`${BACKEND_URL}/api/clubs`, formData);
       toast.success("Club agregado exitosamente");
       setShowAddDialog(false);
-      setFormData({ name: "", password: "", crest_url: "", sport: "football" });
+      setFormData({ name: "", password: "", crest_url: "", sport: "football", institution_type: "club" });
       fetchClubs();
     } catch (error) {
       toast.error(error.response?.data?.detail || "Error al agregar club");
@@ -88,11 +93,12 @@ const ClubsManagement = () => {
   const openEditDialog = (club) => {
     setEditingClub(club);
     setEditFormData({
-      name:      club.name,
-      password:  "",
-      crest_url: club.crest_url || "",
-      status:    club.status || "active",
-      sport:     club.sport || "football",
+      name:             club.name,
+      password:         "",
+      crest_url:        club.crest_url || "",
+      status:           club.status || "active",
+      sport:            club.sport || "football",
+      institution_type: club.institution_type || "club",
     });
     setShowEditDialog(true);
   };
@@ -151,6 +157,22 @@ const ClubsManagement = () => {
                     />
                   </div>
                   <div>
+                    <Label className="text-sm">Tipo de institución</Label>
+                    <Select value={formData.institution_type} onValueChange={(v) => setFormData({ ...formData, institution_type: v })}>
+                      <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#121212] border-white/10">
+                        {INSTITUTION_TYPES.map(t => (
+                          <SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-zinc-600 mt-1">
+                      Las federaciones tienen un portal de gestión diferente al de los clubes.
+                    </p>
+                  </div>
+                  <div>
                     <Label className="text-sm">Deporte</Label>
                     <Select value={formData.sport} onValueChange={(v) => setFormData({ ...formData, sport: v })}>
                       <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5">
@@ -193,6 +215,7 @@ const ClubsManagement = () => {
                 <TableHeader>
                   <TableRow className="border-white/10">
                     <TableHead className="text-zinc-400">NOMBRE</TableHead>
+                    <TableHead className="text-zinc-400 hidden sm:table-cell">TIPO</TableHead>
                     <TableHead className="text-zinc-400 hidden sm:table-cell">DEPORTE</TableHead>
                     <TableHead className="text-zinc-400">ESTADO</TableHead>
                     <TableHead className="text-zinc-400 hidden md:table-cell">FECHA</TableHead>
@@ -209,6 +232,13 @@ const ClubsManagement = () => {
                           )}
                           <span className="font-medium">{club.name}</span>
                         </div>
+                      </TableCell>
+                      <TableCell className="text-zinc-400 hidden sm:table-cell text-sm">
+                        {club.institution_type === 'federation' ? (
+                          <span className="flex items-center gap-1 text-green-400">🛡️ Federación</span>
+                        ) : (
+                          <span className="text-zinc-500">🏟️ Club</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-zinc-400 hidden sm:table-cell text-sm">
                         {SPORT_LABEL(club.sport) || "—"}
@@ -277,6 +307,19 @@ const ClubsManagement = () => {
                   onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
                   className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
                 />
+              </div>
+              <div>
+                <Label className="text-sm">Tipo de institución</Label>
+                <Select value={editFormData.institution_type} onValueChange={(v) => setEditFormData({ ...editFormData, institution_type: v })}>
+                  <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#121212] border-white/10">
+                    {INSTITUTION_TYPES.map(t => (
+                      <SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label className="text-sm">Deporte</Label>

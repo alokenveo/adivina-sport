@@ -13,14 +13,14 @@ import ClubOrders from "@/pages/ClubOrders";
 import ClubLeague from "@/pages/ClubLeague";
 import AdminDashboard from "@/pages/AdminDashboard";
 import LeaguePublic from "@/pages/LeaguePublic";
-import FederationDashboard from "@/pages/FederationDashboard";
+import FederationPortal from "@/pages/FederationPortal";
 import { Toaster } from "@/components/ui/sonner";
 import "@/App.css";
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
-// Protección básica: usuario autenticado
+// Protección básica
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
   const { user, admin, authLoaded } = useAuth();
   if (!authLoaded) return null;
@@ -33,23 +33,29 @@ const SectionRoute = ({ sectionKey, children }) => {
   const { user, authLoaded } = useAuth();
   if (!authLoaded) return null;
   if (!user) return <Navigate to="/member-club" replace />;
-
-  // Si nav_sections no está definido (club legacy) dejamos pasar todo
+  if (user.institution_type === 'federation') return <Navigate to="/federation/dashboard" replace />;
   if (!user.nav_sections) return children;
-
-  // Perfil siempre permitido
   if (sectionKey === "profile") return children;
-
-  if (!user.nav_sections.includes(sectionKey)) {
-    return <Navigate to="/club/dashboard" replace />;
-  }
+  if (!user.nav_sections.includes(sectionKey)) return <Navigate to="/club/dashboard" replace />;
   return children;
 };
 
-// Protege el panel de federación
+// Redirección inteligente según tipo de institución
+const SmartClubRoute = ({ children }) => {
+  const { user, authLoaded } = useAuth();
+  if (!authLoaded) return null;
+  if (!user) return <Navigate to="/member-club" replace />;
+  if (user.institution_type === 'federation') return <Navigate to="/federation/dashboard" replace />;
+  return children;
+};
+
+// Portal de federación — solo para institution_type === 'federation'
 const FederationRoute = ({ children }) => {
-  const stored = localStorage.getItem("federation_user");
-  return stored ? children : <Navigate to="/liga" replace />;
+  const { user, authLoaded } = useAuth();
+  if (!authLoaded) return null;
+  if (!user) return <Navigate to="/member-club" replace />;
+  if (user.institution_type !== 'federation') return <Navigate to="/club/dashboard" replace />;
+  return children;
 };
 
 function App() {
@@ -80,47 +86,38 @@ function App() {
             <Route path="/liga" element={<LeaguePublic />} />
 
             {/* ── Auth ── */}
-            <Route path="/member-club"  element={<MemberLogin />} />
-            <Route path="/admin/login"  element={<Navigate to="/member-club" replace />} />
+            <Route path="/member-club" element={<MemberLogin />} />
+            <Route path="/admin/login" element={<Navigate to="/member-club" replace />} />
 
             {/* ── Admin ── */}
-            <Route
-              path="/admin/dashboard"
-              element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>}
-            />
+            <Route path="/admin/dashboard"
+              element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
 
-            {/* ── Panel federación ── */}
-            <Route
-              path="/federation/dashboard"
-              element={<FederationRoute><FederationDashboard /></FederationRoute>}
-            />
+            {/* ── Federación — portal propio ── */}
+            <Route path="/federation/dashboard"
+              element={<FederationRoute><FederationPortal /></FederationRoute>} />
 
             {/* ── Club — siempre accesibles ── */}
-            <Route path="/club/dashboard" element={<ProtectedRoute><ClubDashboard /></ProtectedRoute>} />
-            <Route path="/club/profile"   element={<ProtectedRoute><ClubProfile /></ProtectedRoute>} />
+            <Route path="/club/dashboard"
+              element={<SmartClubRoute><ClubDashboard /></SmartClubRoute>} />
+            <Route path="/club/profile"
+              element={<SmartClubRoute><ClubProfile /></SmartClubRoute>} />
 
             {/* ── Club — protegidas por sección ── */}
-            <Route path="/club/contracts" element={
-              <SectionRoute sectionKey="contracts"><ClubContracts /></SectionRoute>
-            } />
-            <Route path="/club/invoices" element={
-              <SectionRoute sectionKey="invoices"><ClubInvoices /></SectionRoute>
-            } />
-            <Route path="/club/points" element={
-              <SectionRoute sectionKey="points"><ClubPoints /></SectionRoute>
-            } />
-            <Route path="/club/kit-design" element={
-              <SectionRoute sectionKey="kit-design"><KitDesign /></SectionRoute>
-            } />
-            <Route path="/club/requests" element={
-              <SectionRoute sectionKey="requests"><ClubRequests /></SectionRoute>
-            } />
-            <Route path="/club/orders" element={
-              <SectionRoute sectionKey="orders"><ClubOrders /></SectionRoute>
-            } />
-            <Route path="/club/liga" element={
-              <SectionRoute sectionKey="league"><ClubLeague /></SectionRoute>
-            } />
+            <Route path="/club/contracts"
+              element={<SectionRoute sectionKey="contracts"><ClubContracts /></SectionRoute>} />
+            <Route path="/club/invoices"
+              element={<SectionRoute sectionKey="invoices"><ClubInvoices /></SectionRoute>} />
+            <Route path="/club/points"
+              element={<SectionRoute sectionKey="points"><ClubPoints /></SectionRoute>} />
+            <Route path="/club/kit-design"
+              element={<SectionRoute sectionKey="kit-design"><KitDesign /></SectionRoute>} />
+            <Route path="/club/requests"
+              element={<SectionRoute sectionKey="requests"><ClubRequests /></SectionRoute>} />
+            <Route path="/club/orders"
+              element={<SectionRoute sectionKey="orders"><ClubOrders /></SectionRoute>} />
+            <Route path="/club/liga"
+              element={<SectionRoute sectionKey="league"><ClubLeague /></SectionRoute>} />
           </Routes>
         </BrowserRouter>
         <Toaster position="top-right" />

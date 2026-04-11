@@ -7,6 +7,10 @@ const FALLBACK_NAV_SECTIONS = [
   'contracts', 'invoices', 'points', 'kit-design', 'requests', 'orders', 'league'
 ]
 
+const FEDERATION_NAV_SECTIONS = [
+  'league-management', 'affiliated-clubs', 'circulars', 'stats', 'news'
+]
+
 export async function POST(request) {
   try {
     const { club_name, password } = await request.json()
@@ -31,13 +35,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
     }
 
+    const isFederation = club.institution_type === 'federation'
+
     return NextResponse.json({
-      token:        `club_${club.id}`,
-      club_id:      club.id,
-      club_name:    club.name,
-      crest_url:    club.crest_url || null,
-      sport:        club.sport || 'football',
-      nav_sections: club.nav_sections || FALLBACK_NAV_SECTIONS,
+      token:            `club_${club.id}`,
+      club_id:          club.id,
+      club_name:        club.name,
+      crest_url:        club.crest_url || null,
+      sport:            club.sport || 'football',
+      institution_type: club.institution_type || 'club',
+      nav_sections:     isFederation
+        ? (club.nav_sections || FEDERATION_NAV_SECTIONS)
+        : (club.nav_sections || FALLBACK_NAV_SECTIONS),
     })
   } catch (err) {
     console.error('Login error:', err)
