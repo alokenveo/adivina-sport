@@ -26,7 +26,7 @@ const DEFAULT_NAV_SECTIONS_BY_SPORT = {
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from('clubs')
-    .select('id, name, crest_url, status, sport, nav_sections, created_at')
+    .select('id, name, crest_url, status, sport, nav_sections, institution_type, created_at')
     .order('name')
 
   if (error) return NextResponse.json([], { status: 500 })

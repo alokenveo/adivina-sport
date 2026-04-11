@@ -7,13 +7,13 @@ import { toast } from "sonner";
 import {
   FileText, Receipt, Trophy, Palette, Package,
   ShoppingBag, Swords, Save, CheckCircle2, XCircle,
-  Users, Zap
+  Users, Zap, Shield, Newspaper, BarChart3, Send, Calendar
 } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
-// Secciones configurables — perfil no aparece porque es siempre visible
-const SECTION_DEFINITIONS = [
+// Secciones para clubes deportivos normales
+const CLUB_SECTION_DEFINITIONS = [
   {
     key:         "contracts",
     label:       "Contratos",
@@ -79,6 +79,56 @@ const SECTION_DEFINITIONS = [
   },
 ];
 
+// Secciones para federaciones — fijas, no configurables individualmente
+// (su portal tiene su propio nav, pero podemos mostrar qué módulos están activos)
+const FEDERATION_SECTION_DEFINITIONS = [
+  {
+    key:         "league-management",
+    label:       "Gestión de Liga",
+    description: "Partidos, jornadas, equipos y clasificación",
+    icon:        Calendar,
+    color:       "text-[#DFFF00]",
+    bg:          "bg-[#DFFF00]/10",
+    border:      "border-[#DFFF00]/20",
+  },
+  {
+    key:         "affiliated-clubs",
+    label:       "Clubes Afiliados",
+    description: "Gestión de miembros de la federación",
+    icon:        Users,
+    color:       "text-blue-400",
+    bg:          "bg-blue-500/10",
+    border:      "border-blue-500/20",
+  },
+  {
+    key:         "circulars",
+    label:       "Circulares",
+    description: "Comunicados oficiales a clubes",
+    icon:        Send,
+    color:       "text-orange-400",
+    bg:          "bg-orange-500/10",
+    border:      "border-orange-500/20",
+  },
+  {
+    key:         "stats",
+    label:       "Estadísticas",
+    description: "Estadísticas de la liga y goleadores",
+    icon:        BarChart3,
+    color:       "text-purple-400",
+    bg:          "bg-purple-500/10",
+    border:      "border-purple-500/20",
+  },
+  {
+    key:         "news",
+    label:       "Noticias de Liga",
+    description: "Publicación de noticias y anuncios",
+    icon:        Newspaper,
+    color:       "text-green-400",
+    bg:          "bg-green-500/10",
+    border:      "border-green-500/20",
+  },
+];
+
 const SPORTS = [
   { value: "football",   label: "⚽ Fútbol" },
   { value: "basketball", label: "🏀 Baloncesto" },
@@ -87,7 +137,6 @@ const SPORTS = [
   { value: "other",      label: "🏅 Otro deporte" },
 ];
 
-// Secciones por defecto sugeridas según el deporte
 const DEFAULT_SECTIONS_BY_SPORT = {
   football:   ["contracts", "invoices", "points", "kit-design", "requests", "orders", "league"],
   basketball: ["contracts", "invoices", "points", "kit-design", "requests", "orders", "league"],
@@ -95,6 +144,10 @@ const DEFAULT_SECTIONS_BY_SPORT = {
   volleyball: ["contracts", "invoices", "points", "kit-design", "requests", "orders"],
   other:      ["contracts", "invoices", "points", "requests", "orders"],
 };
+
+const DEFAULT_FEDERATION_SECTIONS = [
+  "league-management", "affiliated-clubs", "circulars", "stats", "news"
+];
 
 const ClubNavConfig = () => {
   const [clubs, setClubs]               = useState([]);
@@ -104,6 +157,9 @@ const ClubNavConfig = () => {
   const [sport, setSport]               = useState("football");
   const [saving, setSaving]             = useState(false);
   const [changed, setChanged]           = useState(false);
+
+  const isFederation = selectedClub?.institution_type === "federation";
+  const sectionDefs  = isFederation ? FEDERATION_SECTION_DEFINITIONS : CLUB_SECTION_DEFINITIONS;
 
   const fetchClubs = useCallback(async () => {
     const res = await axios.get(`${BACKEND_URL}/api/clubs`);
@@ -118,10 +174,14 @@ const ClubNavConfig = () => {
     if (!club) return;
     setSelectedClub(club);
     setSport(club.sport || "football");
-    // nav_sections puede ser null en clubes legacy → usar todas por defecto
-    setSections(
-      club.nav_sections || SECTION_DEFINITIONS.map(s => s.key)
-    );
+
+    if (club.institution_type === "federation") {
+      // Federación: usar sus secciones propias o las por defecto
+      setSections(club.nav_sections || DEFAULT_FEDERATION_SECTIONS);
+    } else {
+      // Club: usar sus secciones o todas por defecto
+      setSections(club.nav_sections || CLUB_SECTION_DEFINITIONS.map(s => s.key));
+    }
     setChanged(false);
   }, [selectedClubId, clubs]);
 
@@ -133,12 +193,16 @@ const ClubNavConfig = () => {
   };
 
   const applyDefault = () => {
-    setSections(DEFAULT_SECTIONS_BY_SPORT[sport] || DEFAULT_SECTIONS_BY_SPORT.other);
+    if (isFederation) {
+      setSections(DEFAULT_FEDERATION_SECTIONS);
+    } else {
+      setSections(DEFAULT_SECTIONS_BY_SPORT[sport] || DEFAULT_SECTIONS_BY_SPORT.other);
+    }
     setChanged(true);
   };
 
   const enableAll = () => {
-    setSections(SECTION_DEFINITIONS.map(s => s.key));
+    setSections(sectionDefs.map(s => s.key));
     setChanged(true);
   };
 
@@ -149,8 +213,6 @@ const ClubNavConfig = () => {
 
   const handleSportChange = (newSport) => {
     setSport(newSport);
-    // Sugerir secciones del deporte pero mantener las ya elegidas
-    // Solo si el admin quiere, puede aplicar el defecto con el botón
     setChanged(true);
   };
 
@@ -159,7 +221,7 @@ const ClubNavConfig = () => {
     setSaving(true);
     try {
       await axios.put(`${BACKEND_URL}/api/clubs/${selectedClubId}`, {
-        sport,
+        sport: isFederation ? selectedClub.sport : sport,
         nav_sections: sections,
       });
       toast.success(`Configuración guardada para ${selectedClub?.name}`);
@@ -177,23 +239,22 @@ const ClubNavConfig = () => {
       <CardHeader>
         <CardTitle className="text-2xl flex items-center gap-2">
           <Zap className="h-6 w-6 text-[#DFFF00]" />
-          Configuración del Portal por Club
+          Configuración del Portal por Institución
         </CardTitle>
         <CardDescription className="text-zinc-400">
-          Define el deporte y qué secciones del portal privado ve cada club en su menú de navegación.
-          El Perfil del Club siempre es visible.
+          Define el deporte y qué secciones del portal privado ve cada club o federación en su menú de navegación.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
 
-        {/* Selector de club */}
+        {/* Selector de institución */}
         <div className="p-4 bg-[#1A1A1A] rounded-xl border border-white/5">
           <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2 block">
-            Club a configurar
+            Institución a configurar
           </label>
           <Select value={selectedClubId} onValueChange={setSelectedClubId}>
             <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white">
-              <SelectValue placeholder="Selecciona un club…" />
+              <SelectValue placeholder="Selecciona una institución…" />
             </SelectTrigger>
             <SelectContent className="bg-[#121212] border-white/10">
               {clubs.map(club => (
@@ -203,11 +264,9 @@ const ClubNavConfig = () => {
                       <img src={club.crest_url} alt="" className="w-5 h-5 rounded-full object-cover" />
                     )}
                     <span>{club.name}</span>
-                    {club.sport && (
-                      <span className="text-xs text-zinc-500">
-                        · {SPORTS.find(s => s.value === club.sport)?.label || club.sport}
-                      </span>
-                    )}
+                    <span className="text-xs text-zinc-500">
+                      · {club.institution_type === "federation" ? "🛡️ Federación" : "🏟️ Club"}
+                    </span>
                   </div>
                 </SelectItem>
               ))}
@@ -217,67 +276,80 @@ const ClubNavConfig = () => {
 
         {selectedClub && (
           <>
-            {/* Deporte */}
-            <div className="p-4 bg-[#1A1A1A] rounded-xl border border-white/5 space-y-3">
-              <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 block">
-                Deporte del club
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                {SPORTS.map(s => (
-                  <button
-                    key={s.value}
-                    onClick={() => handleSportChange(s.value)}
-                    className={`p-3 rounded-lg border text-sm font-medium transition-all text-left ${
-                      sport === s.value
-                        ? "bg-[#DFFF00]/10 border-[#DFFF00]/50 text-white"
-                        : "bg-[#0A0A0A] border-white/5 text-zinc-400 hover:border-white/20"
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
+            {/* Badge tipo de institución */}
+            <div className={`flex items-center gap-3 p-4 rounded-xl border ${
+              isFederation
+                ? "bg-green-500/5 border-green-500/20"
+                : "bg-white/3 border-white/5"
+            }`}>
+              {isFederation
+                ? <Shield className="h-5 w-5 text-green-400 shrink-0" />
+                : <Users className="h-5 w-5 text-zinc-400 shrink-0" />
+              }
+              <div>
+                <p className={`text-sm font-semibold ${isFederation ? "text-green-400" : "text-zinc-300"}`}>
+                  {isFederation ? "Federación deportiva" : "Club deportivo"}
+                </p>
+                <p className="text-xs text-zinc-600">
+                  {isFederation
+                    ? "Las federaciones tienen su propio portal con módulos específicos de gestión de liga."
+                    : "Los clubes tienen acceso a contratos, facturas, puntos y seguimiento de pedidos."
+                  }
+                </p>
               </div>
-              <Button
-                onClick={applyDefault}
-                variant="outline"
-                size="sm"
-                className="border-white/10 text-zinc-400 hover:text-white text-xs"
-              >
-                Aplicar secciones por defecto para este deporte
-              </Button>
             </div>
+
+            {/* Deporte — solo para clubes */}
+            {!isFederation && (
+              <div className="p-4 bg-[#1A1A1A] rounded-xl border border-white/5 space-y-3">
+                <label className="text-xs font-bold uppercase tracking-widest text-zinc-500 block">
+                  Deporte del club
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                  {SPORTS.map(s => (
+                    <button
+                      key={s.value}
+                      onClick={() => handleSportChange(s.value)}
+                      className={`p-3 rounded-lg border text-sm font-medium transition-all text-left ${
+                        sport === s.value
+                          ? "bg-[#DFFF00]/10 border-[#DFFF00]/50 text-white"
+                          : "bg-[#0A0A0A] border-white/5 text-zinc-400 hover:border-white/20"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  onClick={applyDefault}
+                  variant="outline"
+                  size="sm"
+                  className="border-white/10 text-zinc-400 hover:text-white text-xs"
+                >
+                  Aplicar secciones por defecto para este deporte
+                </Button>
+              </div>
+            )}
 
             {/* Secciones */}
             <div className="space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-                  Secciones visibles en el menú
+                  {isFederation ? "Módulos del portal de federación" : "Secciones visibles en el menú"}
                 </label>
                 <div className="flex gap-2">
                   <Button onClick={enableAll}  size="sm" variant="outline" className="border-white/10 text-zinc-400 text-xs">
-                    Activar todas
+                    Activar todos
                   </Button>
                   <Button onClick={disableAll} size="sm" variant="outline" className="border-white/10 text-zinc-400 text-xs">
-                    Desactivar todas
+                    Desactivar todos
                   </Button>
                 </div>
-              </div>
-
-              {/* Siempre habilitadas */}
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-[#1A1A1A] opacity-60">
-                <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
-                  <Users className="h-4 w-4 text-zinc-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-zinc-300">Perfil del Club</p>
-                  <p className="text-xs text-zinc-600">Siempre visible, no configurable</p>
-                </div>
-                <CheckCircle2 className="h-5 w-5 text-zinc-600 shrink-0" />
               </div>
 
               {/* Secciones configurables */}
               <div className="grid md:grid-cols-2 gap-3">
-                {SECTION_DEFINITIONS.map(section => {
+                {sectionDefs.map(section => {
                   const Icon = section.icon;
                   const active = sections.includes(section.key);
                   return (
@@ -311,12 +383,20 @@ const ClubNavConfig = () => {
                   );
                 })}
               </div>
+
+              {/* Nota informativa para federaciones */}
+              {isFederation && (
+                <p className="text-xs text-zinc-600 bg-white/3 border border-white/5 rounded-lg p-3">
+                  Los módulos de la federación se muestran en su portal propio. Desactivar un módulo aquí
+                  ocultará esa sección del menú lateral del portal de federación.
+                </p>
+              )}
             </div>
 
             {/* Resumen + botón guardar */}
             <div className="flex items-center justify-between gap-4 pt-2">
               <p className="text-sm text-zinc-500">
-                <span className="text-white font-semibold">{sections.length}</span> de {SECTION_DEFINITIONS.length} secciones activas
+                <span className="text-white font-semibold">{sections.length}</span> de {sectionDefs.length} {isFederation ? "módulos" : "secciones"} activos
                 {changed && <span className="ml-2 text-yellow-400 text-xs">· Cambios sin guardar</span>}
               </p>
               <Button

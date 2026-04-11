@@ -21,7 +21,7 @@ export async function PUT(request, { params }) {
       .from('clubs')
       .update(update)
       .eq('id', id)
-      .select('id, name, crest_url, status, sport, nav_sections, created_at')
+      .select('id, name, crest_url, status, sport, nav_sections, institution_type, created_at')
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
