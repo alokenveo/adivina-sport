@@ -58,9 +58,10 @@ const ClubLayout = ({ children, title }) => {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="bg-[#050505] border-white/10 w-64 p-0">
+              <SheetContent side="left" className="bg-[#050505] border-white/10 w-64 p-0 flex flex-col">
                 <SheetTitle className="sr-only">Menu de navegacion</SheetTitle>
-                <div className="p-6 border-b border-white/10">
+                {/* Cabecera fija */}
+                <div className="p-6 border-b border-white/10 flex-shrink-0">
                   <img
                     src="https://customer-assets.emergentagent.com/job_adivina-portal/artifacts/rexq8hh7_A56B5578-48F3-41C0-A247-75CAB5930CA5.png"
                     alt="ADIVINA"
@@ -72,7 +73,8 @@ const ClubLayout = ({ children, title }) => {
                     </span>
                   )}
                 </div>
-                <nav className="p-4">
+                {/* Nav con scroll */}
+                <nav className="flex-1 overflow-y-auto p-4">
                   {menuItems.map((item) => {
                     const isActive = location.pathname === item.path;
                     return (

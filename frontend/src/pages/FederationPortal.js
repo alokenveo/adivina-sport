@@ -25,23 +25,23 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 // ── Constantes ────────────────────────────────────────────────────────────────
 const STATUS_LABELS = {
   scheduled: { label: "Programado", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-  live:      { label: "En Juego",   color: "bg-green-500/20 text-green-400 border-green-500/30" },
-  finished:  { label: "Finalizado", color: "bg-zinc-700/50 text-zinc-400 border-zinc-600/30" },
-  postponed: { label: "Aplazado",   color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+  live: { label: "En Juego", color: "bg-green-500/20 text-green-400 border-green-500/30" },
+  finished: { label: "Finalizado", color: "bg-zinc-700/50 text-zinc-400 border-zinc-600/30" },
+  postponed: { label: "Aplazado", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
 };
 
 const PRIORITY_CONFIG = {
   normal: { label: "Normal", color: "bg-zinc-700/50 text-zinc-400" },
-  high:   { label: "Alta",   color: "bg-orange-500/20 text-orange-400" },
+  high: { label: "Alta", color: "bg-orange-500/20 text-orange-400" },
   urgent: { label: "Urgente", color: "bg-red-500/20 text-red-400" },
 };
 
 const SPORTS_LABELS = {
-  football:   "⚽ Fútbol",
+  football: "⚽ Fútbol",
   basketball: "🏀 Baloncesto",
-  futsal:     "🥅 Fútbol Sala",
+  futsal: "🥅 Fútbol Sala",
   volleyball: "🏐 Voleibol",
-  other:      "🏅 Otro",
+  other: "🏅 Otro",
 };
 
 const formatUTC = (dateStr) => {
@@ -117,47 +117,47 @@ const FederationPortal = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Data
-  const [seasons, setSeasons]         = useState([]);
-  const [teams, setTeams]             = useState([]);
-  const [allClubs, setAllClubs]       = useState([]);
-  const [members, setMembers]         = useState([]);
-  const [rounds, setRounds]           = useState([]);
-  const [matches, setMatches]         = useState([]);
-  const [standings, setStandings]     = useState([]);
-  const [leagueNews, setLeagueNews]   = useState([]);
-  const [circulars, setCirculars]     = useState([]);
+  const [seasons, setSeasons] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [allClubs, setAllClubs] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [rounds, setRounds] = useState([]);
+  const [matches, setMatches] = useState([]);
+  const [standings, setStandings] = useState([]);
+  const [leagueNews, setLeagueNews] = useState([]);
+  const [circulars, setCirculars] = useState([]);
   const [activeSeason, setActiveSeason] = useState(null);
   const [filterRound, setFilterRound] = useState("all");
 
   // Inscripción de jugadores
-  const [allPlayers, setAllPlayers]           = useState([]); // jugadores de todos los clubes
-  const [registrations, setRegistrations]     = useState([]); // jugadores inscritos en la federación
-  const [playerSearch, setPlayerSearch]       = useState("");
-  const [regDialog, setRegDialog]             = useState(false);
-  const [selectedPlayer, setSelectedPlayer]   = useState(null);
-  const [regSeasonId, setRegSeasonId]         = useState("");
-  const [regLoading, setRegLoading]           = useState(false);
+  const [allPlayers, setAllPlayers] = useState([]); // jugadores de todos los clubes
+  const [registrations, setRegistrations] = useState([]); // jugadores inscritos en la federación
+  const [playerSearch, setPlayerSearch] = useState("");
+  const [regDialog, setRegDialog] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [regSeasonId, setRegSeasonId] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
 
   // Dialogs
-  const [matchDialog, setMatchDialog]         = useState(false);
-  const [resultDialog, setResultDialog]       = useState(false);
-  const [teamDialog, setTeamDialog]           = useState(false);
-  const [roundDialog, setRoundDialog]         = useState(false);
-  const [newsDialog, setNewsDialog]           = useState(false);
-  const [circularDialog, setCircularDialog]   = useState(false);
+  const [matchDialog, setMatchDialog] = useState(false);
+  const [resultDialog, setResultDialog] = useState(false);
+  const [teamDialog, setTeamDialog] = useState(false);
+  const [roundDialog, setRoundDialog] = useState(false);
+  const [newsDialog, setNewsDialog] = useState(false);
+  const [circularDialog, setCircularDialog] = useState(false);
   const [affiliateDialog, setAffiliateDialog] = useState(false);
-  const [selectedMatch, setSelectedMatch]     = useState(null);
-  const [editingTeam, setEditingTeam]         = useState(null);
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [editingTeam, setEditingTeam] = useState(null);
 
   // Forms
-  const [matchForm, setMatchForm]       = useState({ round_id: "", home_team_id: "", away_team_id: "", match_date: "", venue: "", notes: "" });
-  const [resultForm, setResultForm]     = useState({ home_score: "", away_score: "", status: "finished", home_scorers: "", away_scorers: "" });
-  const [teamForm, setTeamForm]         = useState({ name: "", short_name: "", city: "", stadium: "", adivina_club_id: "" });
-  const [roundForm, setRoundForm]       = useState({ number: "", name: "", date_start: "", date_end: "" });
-  const [newsForm, setNewsForm]         = useState({ title: "", content: "", priority: "normal" });
+  const [matchForm, setMatchForm] = useState({ round_id: "", home_team_id: "", away_team_id: "", match_date: "", venue: "", notes: "" });
+  const [resultForm, setResultForm] = useState({ home_score: "", away_score: "", status: "finished", home_scorers: "", away_scorers: "" });
+  const [teamForm, setTeamForm] = useState({ name: "", short_name: "", city: "", stadium: "", adivina_club_id: "" });
+  const [roundForm, setRoundForm] = useState({ number: "", name: "", date_start: "", date_end: "" });
+  const [newsForm, setNewsForm] = useState({ title: "", content: "", priority: "normal" });
   const [circularForm, setCircularForm] = useState({ title: "", content: "", priority: "normal" });
   const [affiliateForm, setAffiliateForm] = useState({ club_id: "", sport: "football", division: "" });
-  const [logoFile, setLogoFile]         = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
 
   const federationId = user?.club_id;
 
@@ -176,10 +176,10 @@ const FederationPortal = () => {
     }
   }, []);
 
-  const fetchRounds      = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/rounds?season_id=${sid}`); setRounds(r.data); };
-  const fetchMatches     = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/matches?season_id=${sid}`); setMatches(r.data); };
-  const fetchStandings   = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/standings?season_id=${sid}`); setStandings(r.data); };
-  const fetchLeagueNews  = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/news?season_id=${sid}`); setLeagueNews(r.data); };
+  const fetchRounds = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/rounds?season_id=${sid}`); setRounds(r.data); };
+  const fetchMatches = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/matches?season_id=${sid}`); setMatches(r.data); };
+  const fetchStandings = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/standings?season_id=${sid}`); setStandings(r.data); };
+  const fetchLeagueNews = async (sid) => { const r = await axios.get(`${BACKEND_URL}/api/league/news?season_id=${sid}`); setLeagueNews(r.data); };
 
   const fetchTeams = useCallback(async () => {
     const r = await axios.get(`${BACKEND_URL}/api/league/teams`);
@@ -437,20 +437,20 @@ const FederationPortal = () => {
 
   const filteredMatches = filterRound === "all" ? matches : matches.filter(m => m.round_id === filterRound);
   const finishedCount = matches.filter(m => m.status === "finished").length;
-  const pendingCount  = matches.filter(m => m.status === "scheduled").length;
+  const pendingCount = matches.filter(m => m.status === "scheduled").length;
 
   // Nav items
   const navItems = [
-    { key: "home",             icon: Home,      label: "Inicio" },
-    { key: "players",          icon: UserCheck, label: "Jugadores inscritos" },
-    { key: "league",           icon: Calendar,  label: "Partidos" },
-    { key: "standings",        icon: Trophy,    label: "Clasificación" },
-    { key: "teams",            icon: Swords,    label: "Equipos" },
-    { key: "rounds",           icon: Clock,     label: "Jornadas" },
-    { key: "news",             icon: Newspaper, label: "Noticias" },
-    { key: "affiliated-clubs", icon: Users,     label: "Clubes Afiliados" },
-    { key: "circulars",        icon: Send,      label: "Circulares" },
-    { key: "stats",            icon: BarChart3, label: "Estadísticas" },
+    { key: "home", icon: Home, label: "Inicio" },
+    { key: "players", icon: UserCheck, label: "Jugadores inscritos" },
+    { key: "league", icon: Calendar, label: "Partidos" },
+    { key: "standings", icon: Trophy, label: "Clasificación" },
+    { key: "teams", icon: Swords, label: "Equipos" },
+    { key: "rounds", icon: Clock, label: "Jornadas" },
+    { key: "news", icon: Newspaper, label: "Noticias" },
+    { key: "affiliated-clubs", icon: Users, label: "Clubes Afiliados" },
+    { key: "circulars", icon: Send, label: "Circulares" },
+    { key: "stats", icon: BarChart3, label: "Estadísticas" },
   ];
 
   const handleLogout = () => { logout(); navigate("/"); };
@@ -469,10 +469,10 @@ const FederationPortal = () => {
         </div>
       )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Clubes afiliados"   value={members.length}    icon={Users}     />
+        <StatCard label="Clubes afiliados" value={members.length} icon={Users} />
         <StatCard label="Jugadores inscritos" value={registrations.filter(r => r.seasonId === (activeSeason?.id || "")).length} icon={UserCheck} color="text-green-400" />
-        <StatCard label="Partidos jugados"   value={finishedCount}     icon={Check}     color="text-green-400" />
-        <StatCard label="Por jugar"          value={pendingCount}      icon={Calendar}  color="text-blue-400" />
+        <StatCard label="Partidos jugados" value={finishedCount} icon={Check} color="text-green-400" />
+        <StatCard label="Por jugar" value={pendingCount} icon={Calendar} color="text-blue-400" />
       </div>
 
       {matches.filter(m => m.status === "finished").length > 0 && (
@@ -496,12 +496,12 @@ const FederationPortal = () => {
         <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3">Acciones rápidas</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
-            { label: "Inscribir jugador",  icon: UserCheck, action: () => setActiveSection("players") },
-            { label: "Nuevo partido",      icon: Calendar,  action: () => { setActiveSection("league"); setMatchDialog(true); } },
-            { label: "Nueva jornada",      icon: Clock,     action: () => { setActiveSection("rounds"); setRoundDialog(true); } },
-            { label: "Nuevo equipo",       icon: Swords,    action: () => { setActiveSection("teams");  setTeamDialog(true); } },
-            { label: "Publicar noticia",   icon: Newspaper, action: () => { setActiveSection("news");   setNewsDialog(true); } },
-            { label: "Enviar circular",    icon: Send,      action: () => { setActiveSection("circulars"); setCircularDialog(true); } },
+            { label: "Inscribir jugador", icon: UserCheck, action: () => setActiveSection("players") },
+            { label: "Nuevo partido", icon: Calendar, action: () => { setActiveSection("league"); setMatchDialog(true); } },
+            { label: "Nueva jornada", icon: Clock, action: () => { setActiveSection("rounds"); setRoundDialog(true); } },
+            { label: "Nuevo equipo", icon: Swords, action: () => { setActiveSection("teams"); setTeamDialog(true); } },
+            { label: "Publicar noticia", icon: Newspaper, action: () => { setActiveSection("news"); setNewsDialog(true); } },
+            { label: "Enviar circular", icon: Send, action: () => { setActiveSection("circulars"); setCircularDialog(true); } },
           ].map(({ label, icon: Icon, action }) => (
             <button key={label} onClick={action}
               className="flex items-center gap-2 p-3 bg-[#121212] border border-white/5 hover:border-[#DFFF00]/20 rounded-xl text-sm text-zinc-400 hover:text-white transition-all text-left">
@@ -610,14 +610,13 @@ const FederationPortal = () => {
                     const isRegistered = registeredIds.has(player.id);
                     const otherReg = registrations.find(r => r.playerId === player.id && r.seasonId === regSeasonId && r.clubId !== player.club_id);
                     return (
-                      <div key={player.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                        isRegistered
+                      <div key={player.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${isRegistered
                           ? "bg-green-500/5 border-green-500/15"
                           : otherReg
-                          ? "bg-red-500/5 border-red-500/15"
-                          : "bg-[#121212] border-white/5 hover:border-white/10"
-                      }`}>
-                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-black font-black text-sm shrink-0 text-zinc-400">
+                            ? "bg-red-500/5 border-red-500/15"
+                            : "bg-[#121212] border-white/5 hover:border-white/10"
+                        }`}>
+                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-black text-sm shrink-0 text-zinc-400">
                           {player.number}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -747,7 +746,7 @@ const FederationPortal = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">
-                  {["#","Equipo","PJ","G","E","P","GF","GC","DG","Pts","Forma"].map((h, i) => (
+                  {["#", "Equipo", "PJ", "G", "E", "P", "GF", "GC", "DG", "Pts", "Forma"].map((h, i) => (
                     <th key={h} className={`py-3 px-2 text-[10px] font-bold uppercase tracking-wider text-zinc-600 ${i === 1 ? "text-left pl-4" : "text-center"}`}>{h}</th>
                   ))}
                 </tr>
@@ -1049,9 +1048,9 @@ const FederationPortal = () => {
             <div className="space-y-2">
               {standings.map(row => {
                 const form = calcForm(row.team_id, matches);
-                const gpg  = row.played ? (row.goals_for / row.played).toFixed(1) : "0.0";
+                const gpg = row.played ? (row.goals_for / row.played).toFixed(1) : "0.0";
                 const gcpg = row.played ? (row.goals_against / row.played).toFixed(1) : "0.0";
-                const pct  = row.played ? Math.round((row.won / row.played) * 100) : 0;
+                const pct = row.played ? Math.round((row.won / row.played) * 100) : 0;
                 return (
                   <div key={row.id} className="flex items-center gap-3 p-3 bg-[#121212] rounded-xl border border-white/5">
                     <TeamLogo team={row.team} size="sm" />
@@ -1085,17 +1084,17 @@ const FederationPortal = () => {
 
   const renderSection = () => {
     switch (activeSection) {
-      case "home":             return <SectionHome />;
-      case "players":          return <SectionPlayers />;
-      case "league":           return <SectionMatches />;
-      case "standings":        return <SectionStandings />;
-      case "teams":            return <SectionTeams />;
-      case "rounds":           return <SectionRounds />;
-      case "news":             return <SectionNews />;
+      case "home": return <SectionHome />;
+      case "players": return <SectionPlayers />;
+      case "league": return <SectionMatches />;
+      case "standings": return <SectionStandings />;
+      case "teams": return <SectionTeams />;
+      case "rounds": return <SectionRounds />;
+      case "news": return <SectionNews />;
       case "affiliated-clubs": return <SectionAffiliatedClubs />;
-      case "circulars":        return <SectionCirculars />;
-      case "stats":            return <SectionStats />;
-      default:                 return <SectionHome />;
+      case "circulars": return <SectionCirculars />;
+      case "stats": return <SectionStats />;
+      default: return <SectionHome />;
     }
   };
 
@@ -1110,13 +1109,13 @@ const FederationPortal = () => {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="bg-[#050505] border-white/10 w-64 p-0">
+              <SheetContent side="left" className="bg-[#050505] border-white/10 w-64 p-0 flex flex-col">
                 <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
-                <div className="p-6 border-b border-white/10">
+                <div className="p-6 border-b border-white/10 flex-shrink-0">
                   <img src="https://customer-assets.emergentagent.com/job_adivina-portal/artifacts/rexq8hh7_A56B5578-48F3-41C0-A247-75CAB5930CA5.png" alt="ADIVINA" className="h-10" />
                   <span className="mt-3 inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-green-500/10 text-green-400">🛡️ Federación</span>
                 </div>
-                <nav className="p-4">
+                <nav className="flex-1 overflow-y-auto p-4">
                   {navItems.map(({ key, icon: Icon, label }) => (
                     <Button key={key}
                       onClick={() => { setActiveSection(key); setMobileMenuOpen(false); }}
