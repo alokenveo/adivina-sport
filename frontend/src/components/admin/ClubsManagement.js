@@ -27,13 +27,30 @@ const INSTITUTION_TYPES = [
 
 const SPORT_LABEL = (value) => SPORTS.find(s => s.value === value)?.label || value;
 
+// Logo sin molde circular
+const ClubLogo = ({ crest_url, name }) => {
+  if (crest_url) {
+    return (
+      <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
+        <img
+          src={crest_url}
+          alt={name || ""}
+          className="max-w-full max-h-full w-auto h-auto object-contain"
+          style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }}
+        />
+      </div>
+    );
+  }
+  return null;
+};
+
 const ClubsManagement = () => {
-  const [clubs, setClubs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [clubs, setClubs]               = useState([]);
+  const [loading, setLoading]           = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editingClub, setEditingClub] = useState(null);
-  const [formData, setFormData] = useState({ name: "", password: "", crest_url: "", sport: "football", institution_type: "club" });
+  const [editingClub, setEditingClub]   = useState(null);
+  const [formData, setFormData]         = useState({ name: "", password: "", crest_url: "", sport: "football", institution_type: "club" });
   const [editFormData, setEditFormData] = useState({ name: "", password: "", crest_url: "", status: "active", sport: "football", institution_type: "club" });
 
   useEffect(() => { fetchClubs(); }, []);
@@ -42,7 +59,7 @@ const ClubsManagement = () => {
     try {
       const response = await axios.get(`${BACKEND_URL}/api/clubs`);
       setClubs(response.data);
-    } catch (error) {
+    } catch {
       toast.error("Error al cargar clubes");
     } finally {
       setLoading(false);
@@ -51,10 +68,7 @@ const ClubsManagement = () => {
 
   const handleAddClub = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.password) {
-      toast.error("Nombre y contraseña son requeridos");
-      return;
-    }
+    if (!formData.name || !formData.password) { toast.error("Nombre y contraseña son requeridos"); return; }
     try {
       await axios.post(`${BACKEND_URL}/api/clubs`, formData);
       toast.success("Club agregado exitosamente");
@@ -74,7 +88,7 @@ const ClubsManagement = () => {
       setShowEditDialog(false);
       setEditingClub(null);
       fetchClubs();
-    } catch (error) {
+    } catch {
       toast.error("Error al actualizar club");
     }
   };
@@ -85,7 +99,7 @@ const ClubsManagement = () => {
       await axios.delete(`${BACKEND_URL}/api/clubs/${clubId}`);
       toast.success("Club eliminado exitosamente");
       fetchClubs();
-    } catch (error) {
+    } catch {
       toast.error("Error al eliminar club");
     }
   };
@@ -139,67 +153,36 @@ const ClubsManagement = () => {
                 <form onSubmit={handleAddClub} className="space-y-3 mt-1">
                   <div>
                     <Label className="text-sm">Nombre del Club</Label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
-                      placeholder="Nombre del club"
-                    />
+                    <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="bg-[#0A0A0A] border-white/10 text-white mt-1.5" placeholder="Nombre del club" />
                   </div>
                   <div>
                     <Label className="text-sm">Contraseña</Label>
-                    <Input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
-                      placeholder="Contraseña de acceso"
-                    />
+                    <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="bg-[#0A0A0A] border-white/10 text-white mt-1.5" placeholder="Contraseña de acceso" />
                   </div>
                   <div>
                     <Label className="text-sm">Tipo de institución</Label>
                     <Select value={formData.institution_type} onValueChange={(v) => setFormData({ ...formData, institution_type: v })}>
-                      <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"><SelectValue /></SelectTrigger>
                       <SelectContent className="bg-[#121212] border-white/10">
-                        {INSTITUTION_TYPES.map(t => (
-                          <SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>
-                        ))}
+                        {INSTITUTION_TYPES.map(t => <SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-zinc-600 mt-1">
-                      Las federaciones tienen un portal de gestión diferente al de los clubes.
-                    </p>
+                    <p className="text-xs text-zinc-600 mt-1">Las federaciones tienen un portal de gestión diferente.</p>
                   </div>
                   <div>
                     <Label className="text-sm">Deporte</Label>
                     <Select value={formData.sport} onValueChange={(v) => setFormData({ ...formData, sport: v })}>
-                      <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5">
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"><SelectValue /></SelectTrigger>
                       <SelectContent className="bg-[#121212] border-white/10">
-                        {SPORTS.map(s => (
-                          <SelectItem key={s.value} value={s.value} className="text-white">{s.label}</SelectItem>
-                        ))}
+                        {SPORTS.map(s => <SelectItem key={s.value} value={s.value} className="text-white">{s.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-zinc-600 mt-1">
-                      Define las secciones habilitadas por defecto en el portal del club.
-                    </p>
                   </div>
                   <div>
                     <Label className="text-sm">URL del Escudo <span className="text-zinc-500">(Opcional)</span></Label>
-                    <Input
-                      value={formData.crest_url}
-                      onChange={(e) => setFormData({ ...formData, crest_url: e.target.value })}
-                      className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
-                      placeholder="https://..."
-                    />
+                    <Input value={formData.crest_url} onChange={(e) => setFormData({ ...formData, crest_url: e.target.value })} className="bg-[#0A0A0A] border-white/10 text-white mt-1.5" placeholder="https://..." />
                   </div>
-                  <Button type="submit" className="w-full bg-[#DFFF00] text-black hover:bg-white mt-1">
-                    Crear Club
-                  </Button>
+                  <Button type="submit" className="w-full bg-[#DFFF00] text-black hover:bg-white mt-1">Crear Club</Button>
                 </form>
               </DialogContent>
             </Dialog>
@@ -227,27 +210,21 @@ const ClubsManagement = () => {
                     <TableRow key={club.id} className="border-white/10">
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {club.crest_url && (
-                            <img src={club.crest_url} alt="" className="w-6 h-6 rounded-full object-cover" />
-                          )}
+                          <ClubLogo crest_url={club.crest_url} name={club.name} />
                           <span className="font-medium">{club.name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-zinc-400 hidden sm:table-cell text-sm">
-                        {club.institution_type === 'federation' ? (
-                          <span className="flex items-center gap-1 text-green-400">🛡️ Federación</span>
-                        ) : (
-                          <span className="text-zinc-500">🏟️ Club</span>
-                        )}
+                        {club.institution_type === "federation"
+                          ? <span className="flex items-center gap-1 text-green-400">🛡️ Federación</span>
+                          : <span className="text-zinc-500">🏟️ Club</span>}
                       </TableCell>
                       <TableCell className="text-zinc-400 hidden sm:table-cell text-sm">
                         {SPORT_LABEL(club.sport) || "—"}
                       </TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded text-xs ${
-                          club.status === "active"
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-red-500/20 text-red-400"
+                          club.status === "active" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
                         }`}>
                           {club.status === "active" ? "ACTIVO" : "INACTIVO"}
                         </span>
@@ -256,20 +233,10 @@ const ClubsManagement = () => {
                         {new Date(club.created_at).toLocaleDateString("es-ES")}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          onClick={() => openEditDialog(club)}
-                          size="icon"
-                          variant="ghost"
-                          className="text-blue-400 hover:text-blue-300"
-                        >
+                        <Button onClick={() => openEditDialog(club)} size="icon" variant="ghost" className="text-blue-400 hover:text-blue-300">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          onClick={() => handleDeleteClub(club.id, club.name)}
-                          size="icon"
-                          variant="ghost"
-                          className="text-red-400 hover:text-red-300"
-                        >
+                        <Button onClick={() => handleDeleteClub(club.id, club.name)} size="icon" variant="ghost" className="text-red-400 hover:text-red-300">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -281,98 +248,60 @@ const ClubsManagement = () => {
           )}
         </CardContent>
 
-        {/* Diálogo de edición */}
+        {/* Dialog edición */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
           <DialogContent className="dialog-mobile-scroll bg-[#121212] border-white/10 text-white">
             <DialogHeader>
               <DialogTitle className="text-lg">Editar Club</DialogTitle>
-              <DialogDescription className="text-zinc-400 text-sm">
-                Deja la contraseña vacía para mantener la actual.
-              </DialogDescription>
+              <DialogDescription className="text-zinc-400 text-sm">Deja la contraseña vacía para mantener la actual.</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleEditClub} className="space-y-3 mt-1">
               <div>
                 <Label className="text-sm">Nombre del Club</Label>
-                <Input
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                  className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
-                />
+                <Input value={editFormData.name} onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} className="bg-[#0A0A0A] border-white/10 text-white mt-1.5" />
               </div>
               <div>
-                <Label className="text-sm">Nueva Contraseña <span className="text-zinc-500">(vacío = mantener actual)</span></Label>
-                <Input
-                  type="password"
-                  value={editFormData.password}
-                  onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
-                  className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
-                />
+                <Label className="text-sm">Nueva Contraseña <span className="text-zinc-500">(vacío = mantener)</span></Label>
+                <Input type="password" value={editFormData.password} onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })} className="bg-[#0A0A0A] border-white/10 text-white mt-1.5" />
               </div>
               <div>
                 <Label className="text-sm">Tipo de institución</Label>
                 <Select value={editFormData.institution_type} onValueChange={(v) => setEditFormData({ ...editFormData, institution_type: v })}>
-                  <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[#121212] border-white/10">
-                    {INSTITUTION_TYPES.map(t => (
-                      <SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>
-                    ))}
+                    {INSTITUTION_TYPES.map(t => <SelectItem key={t.value} value={t.value} className="text-white">{t.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="text-sm">Deporte</Label>
                 <Select value={editFormData.sport} onValueChange={(v) => setEditFormData({ ...editFormData, sport: v })}>
-                  <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[#121212] border-white/10">
-                    {SPORTS.map(s => (
-                      <SelectItem key={s.value} value={s.value} className="text-white">{s.label}</SelectItem>
-                    ))}
+                    {SPORTS.map(s => <SelectItem key={s.value} value={s.value} className="text-white">{s.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label className="text-sm">URL del Escudo</Label>
-                <Input
-                  value={editFormData.crest_url}
-                  onChange={(e) => setEditFormData({ ...editFormData, crest_url: e.target.value })}
-                  className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"
-                />
+                <Input value={editFormData.crest_url} onChange={(e) => setEditFormData({ ...editFormData, crest_url: e.target.value })} className="bg-[#0A0A0A] border-white/10 text-white mt-1.5" />
               </div>
               <div>
                 <Label className="text-sm">Estado del Club</Label>
-                <Select
-                  value={editFormData.status}
-                  onValueChange={(val) => setEditFormData({ ...editFormData, status: val })}
-                >
-                  <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={editFormData.status} onValueChange={(val) => setEditFormData({ ...editFormData, status: val })}>
+                  <SelectTrigger className="bg-[#0A0A0A] border-white/10 text-white mt-1.5"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[#121212] border-white/10">
                     <SelectItem value="active" className="text-white">
-                      <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
-                        Activo
-                      </span>
+                      <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" />Activo</span>
                     </SelectItem>
                     <SelectItem value="inactive" className="text-white">
-                      <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
-                        Inactivo
-                      </span>
+                      <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" />Inactivo</span>
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Los clubes inactivos no aparecerán en el login de miembros.
-                </p>
+                <p className="text-xs text-zinc-500 mt-1">Los clubes inactivos no aparecerán en el login.</p>
               </div>
-              <Button type="submit" className="w-full bg-[#DFFF00] text-black hover:bg-white mt-1">
-                Actualizar Club
-              </Button>
+              <Button type="submit" className="w-full bg-[#DFFF00] text-black hover:bg-white mt-1">Actualizar Club</Button>
             </form>
           </DialogContent>
         </Dialog>

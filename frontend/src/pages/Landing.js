@@ -1,19 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/App";
-import { Shield, Lock } from "lucide-react";
+import { Shield } from "lucide-react";
 import axios from "axios";
 import { LeagueContent } from "./LeaguePublic";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
-// ── URLs de recursos en Supabase Storage ──────────────────────────────────────
 const SUPABASE_RECURSOS_URL = process.env.REACT_APP_SUPABASE_RECURSOS_URL || "";
-const VIDEO_1_URL    = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/v_f_1.mp4`       : "/v_f_1.mp4";
-const VIDEO_2_URL    = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/v_f_2.mp4`       : "/v_f_2.mp4";
-const FONDO_GYM_URL  = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/fondo_gym.jpg`   : "/fondo_gym.jpg";
-const LOGO_URL       = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/logo_adivina.png`: "https://customer-assets.emergentagent.com/job_adivina-portal/artifacts/rexq8hh7_A56B5578-48F3-41C0-A247-75CAB5930CA5.png";
-// ─────────────────────────────────────────────────────────────────────────────
+const VIDEO_1_URL    = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/v_f_1.mp4`        : "/v_f_1.mp4";
+const VIDEO_2_URL    = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/v_f_2.mp4`        : "/v_f_2.mp4";
+const FONDO_GYM_URL  = SUPABASE_RECURSOS_URL ? `${SUPABASE_RECURSOS_URL}/fondo_gym.jpg`    : "/fondo_gym.jpg";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -22,11 +19,11 @@ const Landing = () => {
   const vid2Ref = useRef(null);
   const [loaded, setLoaded] = useState(false);
 
-  // Fed modal
-  const [fedModal, setFedModal]   = useState(false);
-  const [fedUser, setFedUser]     = useState("");
-  const [fedPass, setFedPass]     = useState("");
-  const [fedError, setFedError]   = useState("");
+  // Modal federación
+  const [fedModal, setFedModal]     = useState(false);
+  const [fedUser, setFedUser]       = useState("");
+  const [fedPass, setFedPass]       = useState("");
+  const [fedError, setFedError]     = useState("");
   const [fedLoading, setFedLoading] = useState(false);
 
   useEffect(() => {
@@ -46,12 +43,13 @@ const Landing = () => {
     setFedLoading(true);
     setFedError("");
     try {
-      const res = await axios.post(`${BACKEND_URL}/api/auth/federation/login`, {
-        username: fedUser,
+      // Usamos el login unificado — la federación es un club con institution_type='federation'
+      const res = await axios.post(`${BACKEND_URL}/api/auth/login`, {
+        club_name: fedUser,
         password: fedPass,
       });
-      localStorage.setItem("federation_user", JSON.stringify(res.data));
-      navigate("/federation/dashboard");
+      localStorage.setItem("club_user", JSON.stringify(res.data));
+      navigate(res.data.institution_type === "federation" ? "/federation/dashboard" : "/club/dashboard");
     } catch {
       setFedError("Credenciales incorrectas");
       setFedPass("");
@@ -65,7 +63,6 @@ const Landing = () => {
       <style>{`
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* ── ROOT: scroll normal ── */
         .landing-root {
           background: #050505;
           color: #F0EFE8;
@@ -74,14 +71,9 @@ const Landing = () => {
           scrollbar-width: none;
           -ms-overflow-style: none;
         }
+        .landing-root::-webkit-scrollbar { display: none; }
 
-        .landing-root::-webkit-scrollbar {
-          display: none;
-        }
-
-        /* ─────────────────────────────────
-           SECCIÓN 1 — HERO (viewport height)
-        ───────────────────────────────── */
+        /* ── HERO ── */
         .hero-section {
           position: relative;
           width: 100%;
@@ -91,8 +83,6 @@ const Landing = () => {
           justify-content: center;
           overflow: hidden;
         }
-
-        /* FONDO */
         .bg-gym {
           position: absolute;
           inset: 0;
@@ -100,7 +90,7 @@ const Landing = () => {
           background-size: cover;
           background-position: center;
           z-index: 0;
-          transform: ${loaded ? 'scale(1)' : 'scale(1.04)'};
+          transform: ${loaded ? "scale(1)" : "scale(1.04)"};
           transition: transform 1.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .bg-grid {
@@ -119,7 +109,6 @@ const Landing = () => {
           background: radial-gradient(ellipse at center, transparent 20%, rgba(5,5,5,0.85) 100%);
           z-index: 1;
         }
-        /* Degradado hacia abajo para mezclar con la sección 2 */
         .hero-bottom-fade {
           position: absolute;
           bottom: 0;
@@ -131,7 +120,7 @@ const Landing = () => {
           pointer-events: none;
         }
 
-        /* CUADRO CENTRAL */
+        /* ── CUADRO ── */
         .box {
           position: relative;
           z-index: 10;
@@ -148,8 +137,6 @@ const Landing = () => {
           transform: ${loaded ? "translateY(0) scale(1)" : "translateY(24px) scale(0.97)"};
           transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        /* ── IZQUIERDA — VIDEO ── */
         .box-left {
           width: 50%;
           position: relative;
@@ -169,15 +156,9 @@ const Landing = () => {
         .box-left-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(
-            to right,
-            rgba(5,5,5,0.1) 0%,
-            transparent 40%,
-            rgba(5,5,5,0.6) 100%
-          );
+          background: linear-gradient(to right, rgba(5,5,5,0.1) 0%, transparent 40%, rgba(5,5,5,0.6) 100%);
           z-index: 2;
         }
-
         .live-tag {
           position: absolute;
           bottom: 18px;
@@ -197,33 +178,16 @@ const Landing = () => {
           0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(223,255,0,0.4); }
           50% { opacity: 0.6; transform: scale(0.85); box-shadow: 0 0 0 4px rgba(223,255,0,0); }
         }
-        .live-text {
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          color: rgba(255,255,255,0.4);
-        }
+        .live-text { font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
 
-        /* ── DIVISOR ── */
         .divider {
           position: absolute;
-          left: 50%;
-          top: 0; bottom: 0;
+          left: 50%; top: 0; bottom: 0;
           width: 1px;
           transform: translateX(-50%);
-          background: linear-gradient(
-            to bottom,
-            transparent,
-            rgba(223,255,0,0.5) 20%,
-            rgba(223,255,0,0.8) 50%,
-            rgba(223,255,0,0.5) 80%,
-            transparent
-          );
+          background: linear-gradient(to bottom, transparent, rgba(223,255,0,0.5) 20%, rgba(223,255,0,0.8) 50%, rgba(223,255,0,0.5) 80%, transparent);
           z-index: 20;
         }
-
-        /* ── DERECHA ── */
         .box-right {
           width: 50%;
           position: relative;
@@ -246,14 +210,9 @@ const Landing = () => {
         .box-right-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(
-            to left,
-            rgba(5,5,5,0.15) 0%,
-            rgba(5,5,5,0.72) 100%
-          );
+          background: linear-gradient(to left, rgba(5,5,5,0.15) 0%, rgba(5,5,5,0.72) 100%);
           z-index: 1;
         }
-
         .slogan-mask {
           position: absolute;
           bottom: 14px;
@@ -274,7 +233,6 @@ const Landing = () => {
           white-space: nowrap;
           display: inline-block;
         }
-
         .box-content {
           position: relative;
           z-index: 5;
@@ -283,157 +241,81 @@ const Landing = () => {
           flex-direction: column;
           gap: 0;
         }
-
         .eyebrow {
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.22em;
-          text-transform: uppercase;
-          color: #DFFF00;
-          margin-bottom: 14px;
-          opacity: ${loaded ? "1" : "0"};
-          transition: opacity 0.6s 0.5s;
+          font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+          color: #DFFF00; margin-bottom: 14px;
+          opacity: ${loaded ? "1" : "0"}; transition: opacity 0.6s 0.5s;
         }
-
         .headline {
           font-family: 'Barlow Condensed', 'Helvetica Neue', Arial, sans-serif;
           font-size: clamp(26px, 4.5vw, 42px);
-          font-weight: 800;
-          line-height: 1.0;
-          letter-spacing: -0.3px;
-          color: #F0EFE8;
-          margin-bottom: 12px;
-          text-transform: uppercase;
-          opacity: ${loaded ? "1" : "0"};
-          transition: opacity 0.6s 0.6s;
+          font-weight: 800; line-height: 1.0; letter-spacing: -0.3px; color: #F0EFE8;
+          margin-bottom: 12px; text-transform: uppercase;
+          opacity: ${loaded ? "1" : "0"}; transition: opacity 0.6s 0.6s;
         }
-        .headline em {
-          font-style: normal;
-          color: #DFFF00;
-        }
-
+        .headline em { font-style: normal; color: #DFFF00; }
         .subline {
           font-family: 'Manrope', 'Helvetica Neue', Arial, sans-serif;
-          font-size: 11px;
-          color: rgba(240,239,232,0.35);
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          line-height: 1.7;
-          margin-bottom: 38px;
-          opacity: ${loaded ? "1" : "0"};
-          transition: opacity 0.6s 0.7s;
+          font-size: 11px; color: rgba(240,239,232,0.35); letter-spacing: 0.1em;
+          text-transform: uppercase; line-height: 1.7; margin-bottom: 38px;
+          opacity: ${loaded ? "1" : "0"}; transition: opacity 0.6s 0.7s;
         }
-
         .btns {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          opacity: ${loaded ? "1" : "0"};
-          transition: opacity 0.6s 0.85s;
+          display: flex; gap: 10px; flex-wrap: wrap;
+          opacity: ${loaded ? "1" : "0"}; transition: opacity 0.6s 0.85s;
         }
-
         .btn-primary {
-          background: #DFFF00;
-          color: #050505;
-          font-size: 11px;
-          font-weight: 800;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          padding: 12px 24px;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
+          background: #DFFF00; color: #050505;
+          font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+          padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer;
+          display: flex; align-items: center; gap: 8px;
           transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
           font-family: 'Barlow Condensed', inherit;
         }
-        .btn-primary:hover {
-          background: #f0ff33;
-          transform: translateY(-1px);
-          box-shadow: 0 8px 24px rgba(223,255,0,0.25);
-        }
+        .btn-primary:hover { background: #f0ff33; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(223,255,0,0.25); }
         .btn-primary:active { transform: translateY(0); }
         .btn-arrow { font-size: 16px; line-height: 1; margin-top: -1px; }
 
-        /* ESQUINAS */
-        .corner {
-          position: absolute;
-          width: 18px; height: 18px;
-          z-index: 25;
-        }
+        .corner { position: absolute; width: 18px; height: 18px; z-index: 25; }
         .corner-tl { top: 0; left: 0; border-top: 2px solid rgba(223,255,0,0.4); border-left: 2px solid rgba(223,255,0,0.4); }
         .corner-tr { top: 0; right: 0; border-top: 2px solid rgba(223,255,0,0.4); border-right: 2px solid rgba(223,255,0,0.4); }
         .corner-bl { bottom: 0; left: 0; border-bottom: 2px solid rgba(223,255,0,0.4); border-left: 2px solid rgba(223,255,0,0.4); }
         .corner-br { bottom: 0; right: 0; border-bottom: 2px solid rgba(223,255,0,0.4); border-right: 2px solid rgba(223,255,0,0.4); }
 
-        /* ─────────────────────────────────
-           SECCIÓN 2 — LIGA
-        ───────────────────────────────── */
-        .league-section {
-          background: #050505;
-          position: relative;
-          z-index: 10;
-        }
-        .league-section-inner {
-          max-width: 900px;
-          margin: 0 auto;
-          padding: 60px 16px 80px;
-        }
+        /* ── SECCIÓN LIGA ── */
+        .league-section { background: #050505; position: relative; z-index: 10; }
+        .league-section-inner { max-width: 900px; margin: 0 auto; padding: 60px 16px 80px; }
         .league-section-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 16px;
-          margin-bottom: 28px;
-          flex-wrap: wrap;
+          display: flex; align-items: flex-start; justify-content: space-between;
+          gap: 16px; margin-bottom: 28px; flex-wrap: wrap;
         }
         .league-section-title {
           font-family: 'Barlow Condensed', sans-serif;
-          font-size: clamp(28px, 5vw, 48px);
-          font-weight: 900;
-          text-transform: uppercase;
-          letter-spacing: -0.02em;
-          color: #F0EFE8;
+          font-size: clamp(28px, 5vw, 48px); font-weight: 900; text-transform: uppercase;
+          letter-spacing: -0.02em; color: #F0EFE8;
         }
-        .league-section-title em {
-          font-style: normal;
+        .league-section-title em { font-style: normal; color: #DFFF00; }
+        .league-section-sub { font-size: 13px; color: rgba(240,239,232,0.3); margin-top: 4px; font-family: 'Manrope', sans-serif; }
+
+        /* Botón de acceso al portal de federación — visible y prominente */
+        .btn-federation {
+          display: flex; align-items: center; gap: 7px;
+          background: rgba(223,255,0,0.08);
+          color: rgba(223,255,0,0.75);
+          font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+          padding: 9px 16px; border-radius: 8px;
+          border: 1px solid rgba(223,255,0,0.2);
+          cursor: pointer; font-family: 'Manrope', inherit; transition: all 0.15s;
+          white-space: nowrap; margin-top: 4px; flex-shrink: 0;
+        }
+        .btn-federation:hover {
+          background: rgba(223,255,0,0.14);
+          border-color: rgba(223,255,0,0.45);
           color: #DFFF00;
         }
-        .league-section-sub {
-          font-size: 13px;
-          color: rgba(240,239,232,0.3);
-          margin-top: 4px;
-          font-family: 'Manrope', sans-serif;
-        }
-        .btn-fed-small {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          background: transparent;
-          color: rgba(240,239,232,0.25);
-          font-size: 10px;
-          font-weight: 600;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          padding: 7px 12px;
-          border-radius: 6px;
-          border: 1px solid rgba(255,255,255,0.07);
-          cursor: pointer;
-          font-family: 'Manrope', inherit;
-          transition: all 0.15s;
-          white-space: nowrap;
-          margin-top: 4px;
-        }
-        .btn-fed-small:hover {
-          color: rgba(240,239,232,0.5);
-          border-color: rgba(255,255,255,0.12);
-        }
-        /* Separador sutil entre secciones */
+
         .section-divider {
-          width: 100%;
-          height: 1px;
+          width: 100%; height: 1px;
           background: linear-gradient(to right, transparent, rgba(223,255,0,0.15) 50%, transparent);
         }
 
@@ -478,16 +360,13 @@ const Landing = () => {
           border-radius: 6px; color: #ff7070; font-size: 12px; padding: 8px 12px; margin-top: 10px;
         }
 
-        /* ── RESPONSIVE — móvil ── */
+        /* Responsive móvil */
         @media (max-width: 540px) {
           .hero-section { height: 100dvh; }
           .box {
-            flex-direction: column;
-            width: 100vw;
-            height: auto;
-            min-height: calc(100dvh - 0px);
-            border-radius: 0;
-            box-shadow: none;
+            flex-direction: column; width: 100vw;
+            height: auto; min-height: calc(100dvh - 0px);
+            border-radius: 0; box-shadow: none;
           }
           .box-left { width: 100%; height: 220px; flex-shrink: 0; }
           .box-left video { object-position: center 20%; }
@@ -505,14 +384,10 @@ const Landing = () => {
           .corner-tl, .corner-tr, .corner-bl, .corner-br { display: none; }
           .slogan-mask span { font-size: 30px; }
           .league-section-inner { padding: 40px 16px 60px; }
+          .league-section-header { flex-direction: column; }
         }
-
-        /* ── RESPONSIVE — tablet ── */
         @media (min-width: 541px) and (max-width: 860px) {
-          .box {
-            width: calc(100vw - 48px);
-            height: min(420px, calc(100vh - 80px));
-          }
+          .box { width: calc(100vw - 48px); height: min(420px, calc(100vh - 80px)); }
           .box-content { padding: 30px 28px; }
           .headline { font-size: 30px; }
           .subline { margin-bottom: 28px; }
@@ -521,23 +396,18 @@ const Landing = () => {
 
       <div className="landing-root">
 
-        {/* ═══════════════════════════════
-            SECCIÓN 1 — HERO
-        ═══════════════════════════════ */}
+        {/* ═══════════════ SECCIÓN 1 — HERO ═══════════════ */}
         <section className="hero-section">
-          {/* Fondo */}
           <div className="bg-gym" />
           <div className="bg-grid" />
           <div className="bg-vignette" />
 
-          {/* Cuadro central */}
           <div className="box">
             <div className="corner corner-tl" />
             <div className="corner corner-tr" />
             <div className="corner corner-bl" />
             <div className="corner corner-br" />
 
-            {/* IZQUIERDA */}
             <div className="box-left">
               <video ref={vid1Ref} autoPlay muted loop playsInline preload="auto">
                 <source src={VIDEO_1_URL} type="video/mp4" />
@@ -549,18 +419,14 @@ const Landing = () => {
               </div>
             </div>
 
-            {/* Divisor */}
             <div className="divider" />
 
-            {/* DERECHA */}
             <div className="box-right">
               <video ref={vid2Ref} autoPlay muted loop playsInline preload="auto">
                 <source src={VIDEO_2_URL} type="video/mp4" />
               </video>
               <div className="box-right-overlay" />
-              <div className="slogan-mask">
-                <span>ELITE SPORTS</span>
-              </div>
+              <div className="slogan-mask"><span>ELITE SPORTS</span></div>
               <div className="box-content">
                 <div className="eyebrow">Página oficial</div>
                 <div className="headline">
@@ -580,13 +446,10 @@ const Landing = () => {
             </div>
           </div>
 
-          {/* Fade hacia abajo */}
           <div className="hero-bottom-fade" />
         </section>
 
-        {/* ═══════════════════════════════
-            SECCIÓN 2 — LIGA
-        ═══════════════════════════════ */}
+        {/* ═══════════════ SECCIÓN 2 — LIGA ═══════════════ */}
         <div className="section-divider" />
 
         <section className="league-section">
@@ -597,9 +460,15 @@ const Landing = () => {
                   Liga <em>Ecuatoguineana</em>
                 </h2>
                 <p className="league-section-sub">
-                  Resultados, clasificación y noticias en tiempo real
+                  Resultados, clasificación y estadísticas en tiempo real
                 </p>
               </div>
+
+              {/* Botón de acceso al portal de federación — siempre visible */}
+              <button className="btn-federation" onClick={() => setFedModal(true)}>
+                <Shield size={13} />
+                Portal Federación
+              </button>
             </div>
 
             <LeagueContent isEmbedded={true} />
@@ -620,9 +489,9 @@ const Landing = () => {
                   Acceso Federación
                 </span>
               </div>
-              <p style={{ fontSize: "12px", color: "rgba(240,239,232,0.35)" }}>Panel de gestión de la liga</p>
+              <p style={{ fontSize: "12px", color: "rgba(240,239,232,0.35)" }}>Panel de gestión federativa</p>
             </div>
-            <label className="fed-label">Usuario</label>
+            <label className="fed-label">Nombre de usuario</label>
             <input className="fed-input" type="text" value={fedUser}
               onChange={e => setFedUser(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleFedLogin()} />

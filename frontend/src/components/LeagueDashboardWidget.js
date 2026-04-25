@@ -7,17 +7,32 @@ import { Swords, Calendar, ChevronRight } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
-/**
- * LeagueDashboardWidget
- * Muestra resumen rápido de la liga en el ClubDashboard.
- * Solo se renderiza si el club tiene 'league' en nav_sections.
- */
+// Logo sin molde circular
+const TeamLogo = ({ team }) => {
+  if (team?.logo_url) {
+    return (
+      <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+        <img
+          src={team.logo_url}
+          alt={team?.name || ""}
+          className="max-w-full max-h-full w-auto h-auto object-contain"
+          style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" }}
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="w-8 h-8 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500 text-xs font-bold flex-shrink-0">
+      {(team?.short_name || team?.name || "?").substring(0, 2).toUpperCase()}
+    </div>
+  );
+};
+
 const LeagueDashboardWidget = ({ clubId }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // No mostrar si el club no tiene la sección liga habilitada
-  const hasLeagueSection = !user?.nav_sections || user.nav_sections.includes('league');
+  const hasLeagueSection = !user?.nav_sections || user.nav_sections.includes("league");
 
   const [myTeamId, setMyTeamId]     = useState(null);
   const [nextMatch, setNextMatch]   = useState(null);
@@ -31,13 +46,11 @@ const LeagueDashboardWidget = ({ clubId }) => {
     if (!clubId || !hasLeagueSection) { setLoading(false); return; }
     const load = async () => {
       try {
-        // 1. Temporada activa
         const seasonsRes = await axios.get(`${BACKEND_URL}/api/league/seasons`);
         const active = seasonsRes.data.find(s => s.active);
         if (!active) { setLoading(false); return; }
         setHasLeague(true);
 
-        // 2. Buscar el equipo vinculado al club directamente en league_teams
         const teamsRes = await axios.get(`${BACKEND_URL}/api/league/teams`);
         const myTeam = teamsRes.data.find(t => t.adivina_club_id === clubId);
         if (!myTeam) { setLoading(false); return; }
@@ -45,31 +58,26 @@ const LeagueDashboardWidget = ({ clubId }) => {
         const teamId = myTeam.id;
         setMyTeamId(teamId);
 
-        // 3. Clasificación
         const standingsRes = await axios.get(`${BACKEND_URL}/api/league/standings?season_id=${active.id}`);
         const standings = standingsRes.data;
         setTotalTeams(standings.length);
         const myEntry = standings.find(s => s.team_id === teamId);
         if (myEntry) setMyPosition(myEntry);
 
-        // 4. Partidos del equipo
         const matchesRes = await axios.get(
           `${BACKEND_URL}/api/league/matches?season_id=${active.id}&team_id=${teamId}`
         );
         const matches = matchesRes.data;
 
-        // Próximo partido (scheduled con fecha)
         const upcoming = matches
           .filter(m => m.status === "scheduled" && m.match_date)
           .sort((a, b) => new Date(a.match_date) - new Date(b.match_date));
         if (upcoming.length > 0) setNextMatch(upcoming[0]);
 
-        // Último resultado
         const finished = matches
           .filter(m => m.status === "finished")
           .sort((a, b) => new Date(b.match_date || 0) - new Date(a.match_date || 0));
         if (finished.length > 0) setLastResult(finished[0]);
-
       } catch (err) {
         console.error("LeagueDashboardWidget error:", err);
       } finally {
@@ -79,17 +87,15 @@ const LeagueDashboardWidget = ({ clubId }) => {
     load();
   }, [clubId, hasLeagueSection]);
 
-  // No mostrar si la sección no está habilitada
-  if (!hasLeagueSection) return null;
-  if (loading || !hasLeague || !myTeamId) return null;
+  if (!hasLeagueSection || loading || !hasLeague || !myTeamId) return null;
 
   const getMatchResult = (match, teamId) => {
     if (!match || match.status !== "finished") return null;
     const isHome = match.home_team_id === teamId;
     const myScore    = isHome ? match.home_score : match.away_score;
     const theirScore = isHome ? match.away_score : match.home_score;
-    if (myScore > theirScore)  return { label: "V", color: "text-green-400 bg-green-500/20" };
-    if (myScore < theirScore)  return { label: "D", color: "text-red-400 bg-red-500/20" };
+    if (myScore > theirScore) return { label: "V", color: "text-green-400 bg-green-500/20" };
+    if (myScore < theirScore) return { label: "D", color: "text-red-400 bg-red-500/20" };
     return { label: "E", color: "text-yellow-400 bg-yellow-500/20" };
   };
 
@@ -97,19 +103,12 @@ const LeagueDashboardWidget = ({ clubId }) => {
 
   const formatMatchDate = (dateStr) => {
     if (!dateStr) return null;
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short", timeZone: "UTC" });
+    return new Date(dateStr).toLocaleDateString("es-ES", { day: "2-digit", month: "short", timeZone: "UTC" });
   };
 
   const TeamBlock = ({ team, score, isHome }) => (
     <div className={`flex items-center gap-2 ${isHome ? "" : "flex-row-reverse"}`}>
-      {team?.logo_url ? (
-        <img src={team.logo_url} alt={team.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
-      ) : (
-        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500 text-xs font-bold shrink-0">
-          {team?.short_name?.substring(0, 2) || "?"}
-        </div>
-      )}
+      <TeamLogo team={team} />
       <div className={`${isHome ? "text-left" : "text-right"} min-w-0`}>
         <p className="text-xs font-bold truncate max-w-[90px]">{team?.name}</p>
         {score !== null && score !== undefined && (
@@ -125,7 +124,6 @@ const LeagueDashboardWidget = ({ clubId }) => {
       onClick={() => navigate("/club/liga")}
     >
       <CardContent className="p-5">
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 bg-[#DFFF00]/10 rounded-full flex items-center justify-center">
@@ -140,7 +138,7 @@ const LeagueDashboardWidget = ({ clubId }) => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Posición en clasificación */}
+          {/* Posición */}
           {myPosition ? (
             <div className="p-3 bg-[#1A1A1A] rounded-lg border border-white/5">
               <p className="text-xs text-zinc-500 mb-1">Clasificación</p>
@@ -181,7 +179,7 @@ const LeagueDashboardWidget = ({ clubId }) => {
             </div>
           ) : (
             <div className="p-3 bg-[#1A1A1A] rounded-lg border border-white/5 flex items-center justify-center">
-              <p className="text-xs text-zinc-600 text-center">Sin próximo partido programado</p>
+              <p className="text-xs text-zinc-600 text-center">Sin próximo partido</p>
             </div>
           )}
 

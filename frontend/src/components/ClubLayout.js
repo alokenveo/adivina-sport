@@ -8,52 +8,14 @@ import {
   LogOut, Receipt, Users, ShoppingBag, Swords
 } from "lucide-react";
 
-// Definición centralizada de todas las secciones posibles del nav
-// El admin puede activar/desactivar cada una por club
 const ALL_MENU_ITEMS = [
-  {
-    key:       "contracts",
-    icon:      FileText,
-    label:     "Contratos",
-    path:      "/club/contracts",
-  },
-  {
-    key:       "invoices",
-    icon:      Receipt,
-    label:     "Facturas",
-    path:      "/club/invoices",
-  },
-  {
-    key:       "points",
-    icon:      Trophy,
-    label:     "Sistema de Puntos",
-    path:      "/club/points",
-  },
-  {
-    key:       "kit-design",
-    icon:      Palette,
-    label:     "Diseño de Kit",
-    path:      "/club/kit-design",
-  },
-  {
-    key:       "requests",
-    icon:      Package,
-    label:     "Solicitudes",
-    path:      "/club/requests",
-  },
-  {
-    key:       "orders",
-    icon:      ShoppingBag,
-    label:     "Mis Pedidos",
-    path:      "/club/orders",
-  },
-  {
-    key:       "league",
-    icon:      Swords,
-    label:     "Liga",
-    path:      "/club/liga",
-    highlight: true,
-  },
+  { key: "contracts", icon: FileText, label: "Contratos", path: "/club/contracts" },
+  { key: "invoices", icon: Receipt, label: "Facturas", path: "/club/invoices" },
+  { key: "points", icon: Trophy, label: "Sistema de Puntos", path: "/club/points" },
+  { key: "kit-design", icon: Palette, label: "Diseño de Kit", path: "/club/kit-design" },
+  { key: "requests", icon: Package, label: "Solicitudes", path: "/club/requests" },
+  { key: "orders", icon: ShoppingBag, label: "Mis Pedidos", path: "/club/orders" },
+  { key: "league", icon: Swords, label: "Liga", path: "/club/liga", highlight: true },
 ];
 
 const ClubLayout = ({ children, title }) => {
@@ -62,21 +24,13 @@ const ClubLayout = ({ children, title }) => {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
-  // Perfil siempre visible (no es configurable)
   const fixedItems = [
-    {
-      key:   "profile",
-      icon:  Users,
-      label: "Perfil del Club",
-      path:  "/club/profile",
-    },
+    { key: "profile", icon: Users, label: "Perfil del Club", path: "/club/profile" },
   ];
 
-  // Filtrar secciones según las que tenga habilitadas el club
   const enabledSections = user?.nav_sections || ALL_MENU_ITEMS.map(i => i.key);
   const dynamicItems = ALL_MENU_ITEMS.filter(item => enabledSections.includes(item.key));
 
-  // Panel principal siempre primero, luego perfil, luego las dinámicas
   const menuItems = [
     { key: "dashboard", icon: Home, label: "Panel Principal", path: "/club/dashboard" },
     ...fixedItems,
@@ -90,7 +44,6 @@ const ClubLayout = ({ children, title }) => {
 
   return (
     <div className="min-h-screen bg-[#050505] noise-bg">
-      {/* Header */}
       <header className="border-b border-white/10 bg-[#050505]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -113,7 +66,6 @@ const ClubLayout = ({ children, title }) => {
                     alt="ADIVINA"
                     className="h-10"
                   />
-                  {/* Etiqueta de deporte */}
                   {user?.sport && user.sport !== 'football' && (
                     <span className="mt-3 inline-block text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-white/5 text-zinc-500">
                       {SPORT_LABELS[user.sport] || user.sport}
@@ -130,18 +82,12 @@ const ClubLayout = ({ children, title }) => {
                         onClick={() => { navigate(item.path); setOpen(false); }}
                         variant="ghost"
                         className={`w-full justify-start mb-2 text-white hover:bg-white/5 ${
-                          isActive
-                            ? "bg-white/5 text-[#DFFF00] border-r-2 border-[#DFFF00]"
-                            : ""
+                          isActive ? "bg-white/5 text-[#DFFF00] border-r-2 border-[#DFFF00]" : ""
                         } ${
-                          item.highlight && !isActive
-                            ? "border border-[#DFFF00]/20 hover:border-[#DFFF00]/40"
-                            : ""
+                          item.highlight && !isActive ? "border border-[#DFFF00]/20 hover:border-[#DFFF00]/40" : ""
                         }`}
                       >
-                        <item.icon
-                          className={`mr-3 h-5 w-5 ${item.highlight ? "text-[#DFFF00]" : ""}`}
-                        />
+                        <item.icon className={`mr-3 h-5 w-5 ${item.highlight ? "text-[#DFFF00]" : ""}`} />
                         {item.label}
                         {item.highlight && !isActive && (
                           <span className="ml-auto text-[9px] font-bold tracking-widest text-[#DFFF00] bg-[#DFFF00]/10 px-1.5 py-0.5 rounded">
@@ -184,17 +130,20 @@ const ClubLayout = ({ children, title }) => {
               </p>
             </div>
             {user?.crest_url && (
-              <img
-                src={user.crest_url}
-                alt="Club Crest"
-                className="h-12 w-12 rounded-full border border-white/20"
-              />
+              /* Logo sin molde circular — object-contain para respetar la forma del PNG */
+              <div className="h-12 w-12 flex items-center justify-center">
+                <img
+                  src={user.crest_url}
+                  alt="Club Crest"
+                  className="max-h-12 max-w-12 w-auto h-auto object-contain"
+                  style={{ filter: "drop-shadow(0 0 4px rgba(255,255,255,0.15))" }}
+                />
+              </div>
             )}
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <h1 className="text-4xl md:text-5xl font-bold uppercase mb-8">{title}</h1>
         {children}
@@ -203,13 +152,12 @@ const ClubLayout = ({ children, title }) => {
   );
 };
 
-// Etiquetas legibles para mostrar el deporte en la UI
 export const SPORT_LABELS = {
   football:   "Fútbol",
   basketball: "Baloncesto",
   volleyball: "Voleibol",
   futsal:     "Fútbol Sala",
   other:      "Deportes",
-}
+};
 
 export default ClubLayout;

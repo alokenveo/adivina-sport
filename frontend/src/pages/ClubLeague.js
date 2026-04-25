@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Calendar, Newspaper, Clock, Star } from "lucide-react";
+import { Trophy, Calendar, Newspaper, Clock, Star, TrendingUp } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -17,48 +17,87 @@ const STATUS_CONFIG = {
   postponed: { label: "Aplazado",   color: "bg-yellow-500/20 text-yellow-400" },
 };
 
-// Formatea fecha/hora en UTC para evitar desfase de zona horaria local
-const formatMatchDateTime = (dateStr, opts = {}) => {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("es-ES", { timeZone: "UTC", ...opts });
-};
-
-const formatMatchDateTimeFull = (dateStr) => {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-  });
-};
-
+// ── Logo sin molde circular ───────────────────────────────────────────────────
 const TeamLogo = ({ team, size = "md" }) => {
-  const s = size === "sm" ? "w-8 h-8 text-xs" : "w-10 h-10 text-sm";
+  const sz = size === "sm" ? "w-8 h-8" : "w-10 h-10";
+  const initials = (team?.short_name || team?.name || "?").substring(0, 2).toUpperCase();
+
   if (team?.logo_url) {
-    return <img src={team.logo_url} alt={team.name} className={`${s} rounded-full object-cover flex-shrink-0`} />;
+    return (
+      <div className={`${sz} flex items-center justify-center flex-shrink-0`}>
+        <img
+          src={team.logo_url}
+          alt={team?.name || ""}
+          className="max-w-full max-h-full w-auto h-auto object-contain"
+          style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" }}
+        />
+      </div>
+    );
   }
   return (
-    <div className={`${s} rounded-full bg-[#1E1E1E] border border-white/10 flex items-center justify-center font-bold text-zinc-400 flex-shrink-0`}>
-      {team?.short_name?.substring(0, 2) || team?.name?.substring(0, 2).toUpperCase() || "?"}
+    <div className={`${sz} rounded-md bg-white/5 border border-white/10 flex items-center justify-center font-bold text-zinc-400 flex-shrink-0 text-[10px]`}>
+      {initials}
     </div>
   );
 };
 
+// ── Forma reciente ────────────────────────────────────────────────────────────
+const FormBadge = ({ result }) => {
+  const cfg = {
+    W: { bg: "bg-green-500", t: "V" },
+    D: { bg: "bg-yellow-500", t: "E" },
+    L: { bg: "bg-red-500",   t: "D" },
+  }[result] || { bg: "bg-zinc-600", t: "?" };
+  return (
+    <span className={`${cfg.bg} text-black font-black rounded text-[9px] px-1 py-0.5 leading-none`}>
+      {cfg.t}
+    </span>
+  );
+};
+
+const calcForm = (teamId, matches) =>
+  matches
+    .filter(m => m.status === "finished" && (m.home_team_id === teamId || m.away_team_id === teamId))
+    .sort((a, b) => new Date(b.match_date || b.created_at) - new Date(a.match_date || a.created_at))
+    .slice(0, 5)
+    .map(m => {
+      const isHome = m.home_team_id === teamId;
+      const my    = isHome ? m.home_score : m.away_score;
+      const their = isHome ? m.away_score : m.home_score;
+      return my > their ? "W" : my < their ? "L" : "D";
+    })
+    .reverse();
+
+// ── Formato de fecha UTC ──────────────────────────────────────────────────────
+const formatMatchDate = (dateStr) => {
+  if (!dateStr) return null;
+  return new Date(dateStr).toLocaleDateString("es-ES", { day: "2-digit", month: "short", timeZone: "UTC" });
+};
+
+const formatMatchDateFull = (dateStr) => {
+  if (!dateStr) return null;
+  return new Date(dateStr).toLocaleDateString("es-ES", {
+    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC",
+  });
+};
+
+// ── Tarjeta de partido ────────────────────────────────────────────────────────
 const MatchCard = ({ match, myTeamId }) => {
   const isMyMatch = match.home_team_id === myTeamId || match.away_team_id === myTeamId;
   const s = STATUS_CONFIG[match.status] || STATUS_CONFIG.scheduled;
   const isFinished = match.status === "finished";
+  const [expanded, setExpanded] = useState(false);
+  const hasScorers = isFinished && ((match.home_scorers?.length > 0) || (match.away_scorers?.length > 0));
 
   return (
-    <div className={`p-3 sm:p-4 rounded-xl border transition-all ${
-      isMyMatch
-        ? "bg-[#DFFF00]/5 border-[#DFFF00]/20 hover:border-[#DFFF00]/40"
-        : "bg-[#121212] border-white/5 hover:border-white/10"
-    }`}>
+    <div
+      className={`p-3 sm:p-4 rounded-xl border transition-all ${
+        isMyMatch
+          ? "bg-[#DFFF00]/5 border-[#DFFF00]/20 hover:border-[#DFFF00]/40"
+          : "bg-[#121212] border-white/5 hover:border-white/10"
+      } ${hasScorers ? "cursor-pointer" : ""}`}
+      onClick={() => hasScorers && setExpanded(e => !e)}
+    >
       {/* Cabecera */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         {isMyMatch && (
@@ -68,10 +107,9 @@ const MatchCard = ({ match, myTeamId }) => {
         )}
         <span className="text-xs text-zinc-500">{match.round?.name}</span>
         {match.match_date && (
-          <span className="text-xs text-zinc-600">
-            · {formatMatchDateTimeFull(match.match_date)}
-          </span>
+          <span className="text-xs text-zinc-600">· {formatMatchDateFull(match.match_date)}</span>
         )}
+        {match.venue && <span className="text-xs text-zinc-700">· {match.venue}</span>}
         <Badge className={`${s.color} border-transparent text-xs ml-auto`}>{s.label}</Badge>
       </div>
 
@@ -108,53 +146,53 @@ const MatchCard = ({ match, myTeamId }) => {
         </div>
       </div>
 
-      {/* Goleadores */}
-      {isFinished && (match.home_scorers?.length > 0 || match.away_scorers?.length > 0) && (
-        <div className="mt-3 pt-3 border-t border-white/5 flex justify-between text-xs text-zinc-500 gap-2">
-          <span className="truncate">{match.home_scorers?.map(s => s.name).join(", ")}</span>
-          <span className="truncate text-right">{match.away_scorers?.map(s => s.name).join(", ")}</span>
+      {/* Goleadores expandibles */}
+      {expanded && hasScorers && (
+        <div className="mt-3 pt-3 border-t border-white/5 flex justify-between gap-4 text-xs text-zinc-500">
+          <div>
+            {match.home_scorers?.map((s, i) => (
+              <div key={i} className="flex items-center gap-1">
+                <span className="text-[#DFFF00]">⚽</span>
+                <span>{s.name}{s.minute ? ` ${s.minute}'` : ""}</span>
+              </div>
+            ))}
+          </div>
+          <div className="text-right">
+            {match.away_scorers?.map((s, i) => (
+              <div key={i} className="flex items-center gap-1 justify-end">
+                <span>{s.name}{s.minute ? ` ${s.minute}'` : ""}</span>
+                <span className="text-[#DFFF00]">⚽</span>
+              </div>
+            ))}
+          </div>
         </div>
+      )}
+      {hasScorers && !expanded && (
+        <p className="text-[10px] text-zinc-600 mt-2 text-center">Toca para ver goleadores</p>
       )}
     </div>
   );
 };
 
-/**
- * Decide qué jornada mostrar por defecto:
- * 1. La última jornada con al menos un partido terminado.
- * 2. Si no hay ninguna, la primera jornada con partidos programados
- *    cuya fecha de inicio esté más próxima a hoy (o la más baja en número).
- * 3. Si todo falla, "all".
- */
+// ── Lógica de jornada por defecto ─────────────────────────────────────────────
 const getDefaultRound = (rounds, matches) => {
   if (!rounds.length) return "all";
-
-  // Jornadas que tienen al menos un partido terminado
-  const roundsWithFinished = new Set(
-    matches.filter(m => m.status === "finished").map(m => m.round_id)
-  );
-
+  const roundsWithFinished = new Set(matches.filter(m => m.status === "finished").map(m => m.round_id));
   if (roundsWithFinished.size > 0) {
-    // La de número más alto entre las que tienen resultados
     const candidates = rounds.filter(r => roundsWithFinished.has(r.id));
     candidates.sort((a, b) => b.number - a.number);
     return candidates[0].id;
   }
-
-  // No hay partidos terminados: primera jornada con partidos programados
-  const roundsWithScheduled = new Set(
-    matches.filter(m => m.status === "scheduled").map(m => m.round_id)
-  );
+  const roundsWithScheduled = new Set(matches.filter(m => m.status === "scheduled").map(m => m.round_id));
   if (roundsWithScheduled.size > 0) {
     const candidates = rounds.filter(r => roundsWithScheduled.has(r.id));
     candidates.sort((a, b) => a.number - b.number);
     return candidates[0].id;
   }
-
-  // Fallback: primera jornada existente
   return rounds[0]?.id || "all";
 };
 
+// ── Página principal ──────────────────────────────────────────────────────────
 const ClubLeague = () => {
   const { user } = useAuth();
   const [seasons, setSeasons]               = useState([]);
@@ -185,17 +223,14 @@ const ClubLeague = () => {
       setStandings(standingsRes.data);
       setNews(newsRes.data);
 
-      // Jornada inteligente por defecto
-      const defaultRound = getDefaultRound(roundsData, matchesData);
-      setFilterRound(defaultRound);
+      setFilterRound(getDefaultRound(roundsData, matchesData));
 
-      // Buscar equipo del club: primero en standings, luego en equipos directamente
+      // Buscar equipo del club
       if (user?.club_id) {
         const myEntry = standingsRes.data.find(s => s.team?.adivina_club_id === user.club_id);
         if (myEntry) {
           setMyTeamId(myEntry.team_id);
         } else {
-          // Si no hay standings aún, buscar en league_teams
           try {
             const teamsRes = await axios.get(`${BACKEND_URL}/api/league/teams`);
             const myTeam = teamsRes.data.find(t => t.adivina_club_id === user.club_id);
@@ -215,45 +250,41 @@ const ClubLeague = () => {
       const res = await axios.get(`${BACKEND_URL}/api/league/seasons`);
       setSeasons(res.data);
       const active = res.data.find(s => s.active);
-      if (active) {
-        setSelectedSeason(active.id);
-        fetchAll(active.id);
-      } else if (res.data.length > 0) {
-        setSelectedSeason(res.data[0].id);
-        fetchAll(res.data[0].id);
-      } else {
-        setLoading(false);
-      }
+      if (active) { setSelectedSeason(active.id); fetchAll(active.id); }
+      else if (res.data.length > 0) { setSelectedSeason(res.data[0].id); fetchAll(res.data[0].id); }
+      else { setLoading(false); }
     };
     load();
   }, [fetchAll]);
 
-  const handleSeasonChange = (id) => {
-    setSelectedSeason(id);
-    fetchAll(id);
-  };
+  const handleSeasonChange = (id) => { setSelectedSeason(id); fetchAll(id); };
 
   const filteredMatches = filterRound === "all"
     ? matches
     : matches.filter(m => m.round_id === filterRound);
 
   const myUpcomingMatches = matches
-    .filter(m =>
-      (m.home_team_id === myTeamId || m.away_team_id === myTeamId) &&
-      m.status === "scheduled"
-    )
+    .filter(m => (m.home_team_id === myTeamId || m.away_team_id === myTeamId) && m.status === "scheduled")
     .slice(0, 3);
 
   const myResults = matches
-    .filter(m =>
-      (m.home_team_id === myTeamId || m.away_team_id === myTeamId) &&
-      m.status === "finished"
-    )
-    .slice(-3)
-    .reverse();
+    .filter(m => (m.home_team_id === myTeamId || m.away_team_id === myTeamId) && m.status === "finished")
+    .slice(-3).reverse();
 
-  const currentSeasonLabel = seasons.find(s => s.id === selectedSeason)?.name || "";
-  const currentRoundLabel = rounds.find(r => r.id === filterRound)?.name || "Todas las jornadas";
+  // Top goleadores
+  const topScorers = [];
+  matches.filter(m => m.status === "finished").forEach(m => {
+    [...(m.home_scorers || []), ...(m.away_scorers || [])].forEach(s => {
+      if (!s.name) return;
+      const found = topScorers.find(t => t.name === s.name);
+      if (found) found.goals++;
+      else topScorers.push({ name: s.name, goals: 1 });
+    });
+  });
+  topScorers.sort((a, b) => b.goals - a.goals);
+
+  const finishedCount = matches.filter(m => m.status === "finished").length;
+  const totalGoals    = matches.reduce((a, m) => a + (m.home_score || 0) + (m.away_score || 0), 0);
 
   return (
     <ClubLayout title="Liga">
@@ -268,27 +299,25 @@ const ClubLeague = () => {
       ) : (
         <div className="space-y-6">
           {/* Selector de temporada */}
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              {seasons.find(s => s.active) && (
-                <span className="text-xs bg-green-500/20 text-green-400 px-3 py-1 rounded-full border border-green-500/30">
-                  Temporada activa
-                </span>
-              )}
-            </div>
-            {seasons.length > 1 && (
+          {seasons.length > 1 && (
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                {seasons.find(s => s.active) && (
+                  <span className="text-xs bg-green-500/20 text-green-400 px-3 py-1 rounded-full border border-green-500/30">
+                    Temporada activa
+                  </span>
+                )}
+              </div>
               <Select value={selectedSeason} onValueChange={handleSeasonChange}>
                 <SelectTrigger className="w-52 bg-[#121212] border-white/10 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#121212] border-white/10">
-                  {seasons.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                  ))}
+                  {seasons.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                 </SelectContent>
               </Select>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Próximos partidos del club */}
           {myTeamId && myUpcomingMatches.length > 0 && (
@@ -305,20 +334,21 @@ const ClubLeague = () => {
             </Card>
           )}
 
-          {/* Tabs principales */}
+          {/* Tabs */}
           <Tabs defaultValue="matches">
-            <TabsList className="grid grid-cols-3 bg-[#121212] border border-white/10 p-1 h-auto">
+            <TabsList className="grid grid-cols-4 bg-[#121212] border border-white/10 p-1 h-auto">
               {[
-                { value: "matches",   Icon: Calendar,  label: "Partidos"      },
+                { value: "matches",   Icon: Calendar,  label: "Partidos" },
                 { value: "standings", Icon: Trophy,    label: "Clasificación" },
-                { value: "news",      Icon: Newspaper, label: "Noticias"      },
+                { value: "stats",     Icon: TrendingUp, label: "Estadísticas" },
+                { value: "news",      Icon: Newspaper, label: "Noticias" },
               ].map(({ value, Icon, label }) => (
                 <TabsTrigger
                   key={value}
                   value={value}
-                  className="flex items-center gap-1.5 py-2 text-xs data-[state=active]:bg-[#DFFF00] data-[state=active]:text-black"
+                  className="flex items-center gap-1.5 py-2 text-[11px] data-[state=active]:bg-[#DFFF00] data-[state=active]:text-black"
                 >
-                  <Icon className="h-4 w-4" />{label}
+                  <Icon className="h-3.5 w-3.5" />{label}
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -332,9 +362,7 @@ const ClubLeague = () => {
                   </SelectTrigger>
                   <SelectContent className="bg-[#121212] border-white/10">
                     <SelectItem value="all">Todas las jornadas</SelectItem>
-                    {rounds.map(r => (
-                      <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                    ))}
+                    {rounds.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <span className="text-xs text-zinc-500">{filteredMatches.length} partidos</span>
@@ -364,7 +392,7 @@ const ClubLeague = () => {
               ) : (
                 <Card className="bg-[#121212] border-white/10 overflow-hidden">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{currentSeasonLabel}</CardTitle>
+                    <CardTitle className="text-base">{seasons.find(s => s.id === selectedSeason)?.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="overflow-x-auto">
@@ -374,17 +402,20 @@ const ClubLeague = () => {
                             <th className="text-left py-3 pl-4 w-8">#</th>
                             <th className="text-left py-3">Equipo</th>
                             <th className="text-center py-3 px-2">PJ</th>
-                            <th className="text-center py-3 px-2">G</th>
+                            <th className="text-center py-3 px-2 text-green-400">G</th>
                             <th className="text-center py-3 px-2 hidden sm:table-cell">E</th>
-                            <th className="text-center py-3 px-2 hidden sm:table-cell">P</th>
+                            <th className="text-center py-3 px-2 hidden sm:table-cell text-red-400">P</th>
+                            <th className="text-center py-3 px-2 hidden md:table-cell">GF</th>
+                            <th className="text-center py-3 px-2 hidden md:table-cell">GC</th>
                             <th className="text-center py-3 px-2">DG</th>
-                            <th className="text-center py-3 pr-4 font-bold">Pts</th>
+                            <th className="text-center py-3 pr-4 font-bold text-[#DFFF00]">Pts</th>
+                            <th className="text-center py-3 pr-4 hidden sm:table-cell">Forma</th>
                           </tr>
                         </thead>
                         <tbody>
                           {standings.map((row) => {
-                            const isMe = row.team?.adivina_club_id === user?.club_id ||
-                                         row.team_id === myTeamId;
+                            const isMe = row.team?.adivina_club_id === user?.club_id || row.team_id === myTeamId;
+                            const form = calcForm(row.team_id, matches);
                             return (
                               <tr
                                 key={row.id}
@@ -394,7 +425,13 @@ const ClubLeague = () => {
                                     : "hover:bg-white/3"
                                 }`}
                               >
-                                <td className="py-3 pl-4 text-zinc-500 font-mono">{row.position}</td>
+                                <td className="py-3 pl-4 text-zinc-500 font-mono text-xs">
+                                  {row.position <= 3 ? (
+                                    <span style={{ color: ["#DFFF00","#aaa","#cd7f32"][row.position-1] }}>
+                                      {row.position}
+                                    </span>
+                                  ) : row.position}
+                                </td>
                                 <td className="py-3">
                                   <div className="flex items-center gap-2">
                                     <TeamLogo team={row.team} size="sm" />
@@ -404,14 +441,24 @@ const ClubLeague = () => {
                                     {isMe && <Star className="h-3 w-3 text-[#DFFF00] fill-[#DFFF00] flex-shrink-0" />}
                                   </div>
                                 </td>
-                                <td className="text-center py-3 px-2 text-zinc-400">{row.played}</td>
-                                <td className="text-center py-3 px-2 text-green-400">{row.won}</td>
-                                <td className="text-center py-3 px-2 text-zinc-400 hidden sm:table-cell">{row.drawn}</td>
-                                <td className="text-center py-3 px-2 text-red-400 hidden sm:table-cell">{row.lost}</td>
-                                <td className="text-center py-3 px-2 text-zinc-400">
+                                <td className="text-center py-3 px-2 text-zinc-400 text-xs">{row.played}</td>
+                                <td className="text-center py-3 px-2 text-green-400 font-semibold text-xs">{row.won}</td>
+                                <td className="text-center py-3 px-2 text-zinc-400 hidden sm:table-cell text-xs">{row.drawn}</td>
+                                <td className="text-center py-3 px-2 text-red-400 font-semibold hidden sm:table-cell text-xs">{row.lost}</td>
+                                <td className="text-center py-3 px-2 text-zinc-500 hidden md:table-cell text-xs">{row.goals_for}</td>
+                                <td className="text-center py-3 px-2 text-zinc-500 hidden md:table-cell text-xs">{row.goals_against}</td>
+                                <td className="text-center py-3 px-2 text-xs text-zinc-400">
                                   {row.goal_difference > 0 ? `+${row.goal_difference}` : row.goal_difference}
                                 </td>
                                 <td className="text-center py-3 pr-4 font-black text-lg text-[#DFFF00]">{row.points}</td>
+                                <td className="text-center py-3 pr-4 hidden sm:table-cell">
+                                  <div className="flex gap-1 justify-center">
+                                    {form.length === 0
+                                      ? <span className="text-zinc-700 text-[10px]">—</span>
+                                      : form.map((r, i) => <FormBadge key={i} result={r} />)
+                                    }
+                                  </div>
+                                </td>
                               </tr>
                             );
                           })}
@@ -423,7 +470,100 @@ const ClubLeague = () => {
               )}
             </TabsContent>
 
-            {/* ── Noticias liga ── */}
+            {/* ── Estadísticas ── */}
+            <TabsContent value="stats" className="mt-4 space-y-5">
+              {/* Resumen */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  { label: "Partidos jugados", value: finishedCount, color: "text-[#DFFF00]" },
+                  { label: "Goles totales",    value: totalGoals,    color: "text-green-400" },
+                  { label: "Media goles/PJ",   value: finishedCount ? (totalGoals / finishedCount).toFixed(1) : "0.0", color: "text-blue-400" },
+                ].map(s => (
+                  <Card key={s.label} className="bg-[#121212] border-white/10">
+                    <CardContent className="p-4">
+                      <p className="text-xs text-zinc-500">{s.label}</p>
+                      <p className={`text-2xl font-black ${s.color} mt-1`}>{s.value}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Goleadores */}
+              {topScorers.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3">
+                    Máximos goleadores
+                  </h3>
+                  <div className="space-y-2">
+                    {topScorers.slice(0, 10).map((s, i) => (
+                      <div key={s.name} className="flex items-center gap-3 p-3 bg-[#121212] rounded-xl border border-white/5">
+                        <span className={`text-xs font-black w-6 text-center ${i < 3 ? "text-[#DFFF00]" : "text-zinc-600"}`}>
+                          {i + 1}
+                        </span>
+                        {i === 0 && <Star className="h-3 w-3 text-[#DFFF00] fill-[#DFFF00] flex-shrink-0" />}
+                        <span className="flex-1 font-medium text-sm">{s.name}</span>
+                        <span className="text-[#DFFF00] font-black text-lg">{s.goals}</span>
+                        <span className="text-xs text-zinc-600">gol{s.goals !== 1 ? "es" : ""}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Rendimiento por equipo */}
+              {standings.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-3">
+                    Rendimiento ofensivo / defensivo
+                  </h3>
+                  <div className="space-y-2">
+                    {standings.map(row => {
+                      const isMe  = row.team?.adivina_club_id === user?.club_id || row.team_id === myTeamId;
+                      const gpg   = row.played ? (row.goals_for / row.played).toFixed(1) : "0.0";
+                      const gcpg  = row.played ? (row.goals_against / row.played).toFixed(1) : "0.0";
+                      const pct   = row.played ? Math.round((row.won / row.played) * 100) : 0;
+                      const form  = calcForm(row.team_id, matches);
+                      return (
+                        <div key={row.id} className={`flex items-center gap-3 p-3 rounded-xl border ${
+                          isMe ? "bg-[#DFFF00]/5 border-[#DFFF00]/20" : "bg-[#121212] border-white/5"
+                        }`}>
+                          <TeamLogo team={row.team} size="sm" />
+                          <span className={`flex-1 font-medium text-sm truncate ${isMe ? "text-[#DFFF00]" : ""}`}>
+                            {row.team?.name}
+                          </span>
+                          <div className="flex gap-1 hidden sm:flex">
+                            {form.map((r, i) => <FormBadge key={i} result={r} />)}
+                          </div>
+                          <div className="flex gap-3 shrink-0 text-xs">
+                            <div className="text-center">
+                              <p className="font-black text-green-400 text-sm">{gpg}</p>
+                              <p className="text-zinc-600 text-[9px]">GF/PJ</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-black text-red-400 text-sm">{gcpg}</p>
+                              <p className="text-zinc-600 text-[9px]">GC/PJ</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="font-black text-[#DFFF00] text-sm">{pct}%</p>
+                              <p className="text-zinc-600 text-[9px]">%V</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {topScorers.length === 0 && standings.length === 0 && (
+                <div className="text-center py-12 text-zinc-500">
+                  <TrendingUp className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                  <p>Las estadísticas aparecerán con los primeros resultados</p>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* ── Noticias ── */}
             <TabsContent value="news" className="mt-4 space-y-4">
               {news.length === 0 ? (
                 <div className="text-center py-12 text-zinc-500">
