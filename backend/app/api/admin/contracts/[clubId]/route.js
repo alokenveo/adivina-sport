@@ -1,7 +1,8 @@
 import { supabaseAdmin } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
+import { applyAutoPoints } from '@/lib/pointsHelper'
 
-// POST /api/admin/contracts/[clubId] → crear contrato con PDF
+// POST /api/admin/contracts/[clubId] → crear contrato con PDF + puntos automáticos
 export async function POST(request, { params }) {
   try {
     const { clubId } = params
@@ -55,6 +56,19 @@ export async function POST(request, { params }) {
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+    // ── Puntos automáticos por contrato firmado ─────────────────────────
+    // Solo si el contrato tiene valor económico
+    if (value > 0) {
+      await applyAutoPoints(
+        clubId,
+        'contract_signed',
+        value,
+        `Contrato firmado: ${title}`
+      )
+    }
+    // ────────────────────────────────────────────────────────────────────
+
     return NextResponse.json({ id: data.id, file_url, message: 'Contract created' }, { status: 201 })
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 })
