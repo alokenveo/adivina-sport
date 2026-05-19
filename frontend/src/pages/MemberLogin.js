@@ -37,16 +37,28 @@ const MemberLogin = () => {
 
   const fetchClubs = async () => {
     try {
-      const response = await axios.get(`${BACKEND_URL}/api/clubs/names`);
-      setClubs(response.data);
+      // Usamos el endpoint de clubs completo para filtrar las federaciones
+      const response = await axios.get(`${BACKEND_URL}/api/clubs`);
+      // Excluir federaciones del dropdown de login de clubes
+      const clubNames = response.data
+        .filter(c => c.status === "active" && c.institution_type !== "federation")
+        .map(c => c.name)
+        .sort();
+      setClubs(clubNames);
     } catch {
-      toast.error("Error al cargar instituciones");
+      // Fallback: usar el endpoint simple de nombres
+      try {
+        const res = await axios.get(`${BACKEND_URL}/api/clubs/names`);
+        setClubs(res.data);
+      } catch {
+        toast.error("Error al cargar clubs");
+      }
     }
   };
 
   const doLogin = async () => {
     if (!selectedClub || !password) {
-      setLoginError("Selecciona una institución e introduce la contraseña.");
+      setLoginError("Selecciona un club e introduce la contraseña.");
       return;
     }
     setLoading(true);
@@ -59,14 +71,13 @@ const MemberLogin = () => {
       login(response.data);
       toast.success(`¡Bienvenido, ${response.data.club_name}!`);
 
-      // Redirigir según el tipo de institución
       if (response.data.institution_type === "federation") {
         navigate("/federation/dashboard");
       } else {
         navigate("/club/dashboard");
       }
     } catch {
-      setLoginError("Institución o contraseña incorrectos.");
+      setLoginError("Club o contraseña incorrectos.");
     } finally {
       setLoading(false);
     }
@@ -330,21 +341,21 @@ const MemberLogin = () => {
             <img className="brand-logo"
               src="https://customer-assets.emergentagent.com/job_adivina-portal/artifacts/rexq8hh7_A56B5578-48F3-41C0-A247-75CAB5930CA5.png"
               alt="ADIVINA" />
-            <span className="brand-name">Portal Privado</span>
+            <span className="brand-name">Portal Privado · Clubes</span>
           </div>
 
           <div className="card">
             <div className="card-title">Iniciar sesión</div>
-            <div className="card-sub">Clubes y federaciones</div>
+            <div className="card-sub">Acceso exclusivo para clubes deportivos</div>
 
             <div className="field">
-              <label className="field-label">Institución</label>
+              <label className="field-label">Club</label>
               <div className="select-wrap">
                 <div
                   className={`select-btn ${selectedClub ? "has-value" : ""} ${dropdownOpen ? "open" : ""}`}
                   onClick={() => setDropdownOpen(o => !o)}
                 >
-                  <span>{selectedClub || "Selecciona una institución"}</span>
+                  <span>{selectedClub || "Selecciona tu club"}</span>
                   <svg className="select-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none">
                     <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>

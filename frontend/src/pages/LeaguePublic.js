@@ -1,34 +1,39 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/App";
 import axios from "axios";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Calendar, Newspaper, ArrowRight, Shield, Lock, TrendingUp, Star } from "lucide-react";
+import { Trophy, Calendar, Newspaper, ArrowRight, Shield, TrendingUp, Star, AlertTriangle, Layers } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const STATUS_CONFIG = {
   scheduled: { label: "Programado", color: "bg-blue-500/20 text-blue-400" },
-  live:      { label: "En Juego",   color: "bg-green-500/20 text-green-400" },
-  finished:  { label: "Finalizado", color: "bg-zinc-700/50 text-zinc-400" },
-  postponed: { label: "Aplazado",   color: "bg-yellow-500/20 text-yellow-400" },
+  live:       { label: "En Juego",  color: "bg-green-500/20 text-green-400" },
+  finished:   { label: "Finalizado",color: "bg-zinc-700/50 text-zinc-400" },
+  postponed:  { label: "Aplazado", color: "bg-yellow-500/20 text-yellow-400" },
+  overdue:    { label: "No jugado", color: "bg-red-500/20 text-red-400" },
 };
 
-// ── Logo sin molde circular ───────────────────────────────────────────────────
+// Detectar si un partido debería haberse jugado y no tiene resultado
+const isMatchOverdue = (match) => {
+  if (!match.match_date || match.status === "finished" || match.status === "postponed") return false;
+  return new Date(match.match_date) < new Date();
+};
+
+const getEffectiveStatus = (match) => isMatchOverdue(match) ? "overdue" : match.status;
+
+// ── Team Logo ──────────────────────────────────────────────────────────────
 const TeamLogo = ({ team, size = "md" }) => {
   const sz = size === "sm" ? "w-8 h-8" : "w-10 h-10";
   const initials = (team?.short_name || team?.name || "?").substring(0, 2).toUpperCase();
-
   if (team?.logo_url) {
     return (
       <div className={`${sz} flex items-center justify-center flex-shrink-0`}>
-        <img
-          src={team.logo_url}
-          alt={team?.name || ""}
-          className="max-w-full max-h-full w-auto h-auto object-contain"
-          style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" }}
-        />
+        <img src={team.logo_url} alt={team?.name || ""} className="max-w-full max-h-full w-auto h-auto object-contain"
+          style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" }} />
       </div>
     );
   }
@@ -39,70 +44,72 @@ const TeamLogo = ({ team, size = "md" }) => {
   );
 };
 
-// ── Forma reciente (últimos 5 resultados) ─────────────────────────────────────
+// ── Forma ──────────────────────────────────────────────────────────────────
 const FormBadge = ({ result }) => {
-  const cfg = {
-    W: { bg: "bg-green-500", text: "V" },
-    D: { bg: "bg-yellow-500", text: "E" },
-    L: { bg: "bg-red-500",   text: "D" },
-  }[result] || { bg: "bg-zinc-600", text: "?" };
-  return (
-    <span className={`${cfg.bg} text-black font-black rounded text-[9px] px-1 py-0.5 leading-none`}>
-      {cfg.text}
-    </span>
-  );
+  const cfg = { W: { bg: "bg-green-500", text: "V" }, D: { bg: "bg-yellow-500", text: "E" }, L: { bg: "bg-red-500", text: "D" } }[result] || { bg: "bg-zinc-600", text: "?" };
+  return <span className={`${cfg.bg} text-black font-black rounded text-[9px] px-1 py-0.5 leading-none`}>{cfg.text}</span>;
 };
 
-// Calcula forma reciente de un equipo a partir de los partidos terminados
 const calcForm = (teamId, matches) => {
-  const finished = matches
+  return matches
     .filter(m => m.status === "finished" && (m.home_team_id === teamId || m.away_team_id === teamId))
     .sort((a, b) => new Date(b.match_date || b.created_at) - new Date(a.match_date || a.created_at))
-    .slice(0, 5);
-
-  return finished.map(m => {
-    const isHome = m.home_team_id === teamId;
-    const myScore    = isHome ? m.home_score : m.away_score;
-    const theirScore = isHome ? m.away_score : m.home_score;
-    if (myScore > theirScore) return "W";
-    if (myScore < theirScore) return "L";
-    return "D";
-  }).reverse();
+    .slice(0, 5)
+    .map(m => {
+      const isHome = m.home_team_id === teamId;
+      const my = isHome ? m.home_score : m.away_score;
+      const their = isHome ? m.away_score : m.home_score;
+      return my > their ? "W" : my < their ? "L" : "D";
+    })
+    .reverse();
 };
 
-// ── Tarjeta de partido ────────────────────────────────────────────────────────
-export const MatchCardPublic = ({ match, isEmbedded = false }) => {
-  const s = STATUS_CONFIG[match.status] || STATUS_CONFIG.scheduled;
+// ── MatchCardPublic ────────────────────────────────────────────────────────
+export const MatchCardPublic = ({ match, isEmbedded = false, grupos = [], rounds = [] }) => {
+  const effectiveStatus = getEffectiveStatus(match);
+  const s = STATUS_CONFIG[effectiveStatus] || STATUS_CONFIG.scheduled;
   const isFinished = match.status === "finished";
+  const overdue = effectiveStatus === "overdue";
   const [expanded, setExpanded] = useState(false);
 
-  const hasScorers = isFinished && (
-    (match.home_scorers?.length > 0) || (match.away_scorers?.length > 0)
-  );
+  const hasScorers = isFinished && ((match.home_scorers?.length > 0) || (match.away_scorers?.length > 0));
+
+  // Obtener grupo de la jornada
+  const round = rounds.find(r => r.id === match.round_id);
+  const grupo = round?.grupo_id ? grupos.find(g => g.id === round.grupo_id) : null;
+  const esLiguilla = round?.es_liguilla || false;
 
   return (
     <div
-      className={`rounded-lg border transition-all ${isEmbedded
-        ? "bg-white/3 border-white/5 hover:border-white/10"
-        : "bg-[#121212] border-white/5 hover:border-white/10"
+      className={`rounded-lg border transition-all ${overdue
+        ? "bg-red-500/5 border-red-500/20"
+        : isEmbedded
+          ? "bg-white/3 border-white/5 hover:border-white/10"
+          : "bg-[#121212] border-white/5 hover:border-white/10"
       } ${hasScorers ? "cursor-pointer" : ""}`}
       onClick={() => hasScorers && setExpanded(e => !e)}
     >
       <div className="flex items-center gap-3 px-3 py-2.5">
-        {/* Jornada + fecha */}
-        <div className="hidden sm:flex flex-col items-start shrink-0 w-28">
-          <span style={{ fontSize: "10px", color: "rgba(240,239,232,0.25)", letterSpacing: "0.05em" }}>
-            {match.round?.name}
-          </span>
+        {/* Jornada + fecha + grupo */}
+        <div className="hidden sm:flex flex-col items-start shrink-0 w-32">
+          <div className="flex items-center gap-1 flex-wrap">
+            <span style={{ fontSize: "10px", color: "rgba(240,239,232,0.25)" }}>{match.round?.name}</span>
+            {esLiguilla && <span className="text-[9px] text-[#DFFF00] font-bold">🏆</span>}
+            {grupo && !esLiguilla && (
+              <span className={`text-[9px] font-semibold px-1 rounded ${grupo.region === "insular" ? "text-blue-400" : "text-amber-400"}`}>
+                {grupo.region === "insular" ? "INS" : "CONT"}
+              </span>
+            )}
+          </div>
           {match.match_date && (
-            <span style={{ fontSize: "10px", color: "rgba(240,239,232,0.2)" }}>
+            <span style={{ fontSize: "10px", color: overdue ? "rgba(248,113,113,0.7)" : "rgba(240,239,232,0.2)" }}>
               {new Date(match.match_date).toLocaleDateString("es-ES", {
                 day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC",
               })}
             </span>
           )}
           {match.venue && (
-            <span style={{ fontSize: "9px", color: "rgba(240,239,232,0.15)" }} className="truncate max-w-[100px]">
+            <span style={{ fontSize: "9px", color: "rgba(240,239,232,0.15)" }} className="truncate max-w-[120px]">
               {match.venue}
             </span>
           )}
@@ -110,7 +117,7 @@ export const MatchCardPublic = ({ match, isEmbedded = false }) => {
 
         {/* Local */}
         <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-          <span className="text-xs font-semibold text-right truncate text-white leading-tight">
+          <span className={`text-xs font-semibold text-right truncate leading-tight ${overdue ? "text-zinc-500" : "text-white"}`}>
             {match.home_team?.name}
           </span>
           <TeamLogo team={match.home_team} size="sm" />
@@ -125,7 +132,9 @@ export const MatchCardPublic = ({ match, isEmbedded = false }) => {
               {match.away_score}
             </span>
           ) : (
-            <span style={{ color: "rgba(240,239,232,0.2)", fontWeight: 700, fontSize: "11px", letterSpacing: "0.1em" }}>VS</span>
+            <span style={{ color: overdue ? "rgba(248,113,113,0.5)" : "rgba(240,239,232,0.2)", fontWeight: 700, fontSize: "11px", letterSpacing: "0.1em" }}>
+              {overdue ? "—" : "VS"}
+            </span>
           )}
           <Badge className={`${s.color} border-transparent text-[9px] mt-0.5`}>{s.label}</Badge>
         </div>
@@ -133,7 +142,7 @@ export const MatchCardPublic = ({ match, isEmbedded = false }) => {
         {/* Visitante */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <TeamLogo team={match.away_team} size="sm" />
-          <span className="text-xs font-semibold text-left truncate text-white leading-tight">
+          <span className={`text-xs font-semibold text-left truncate leading-tight ${overdue ? "text-zinc-500" : "text-white"}`}>
             {match.away_team?.name}
           </span>
         </div>
@@ -160,39 +169,123 @@ export const MatchCardPublic = ({ match, isEmbedded = false }) => {
           </div>
         </div>
       )}
+
+      {/* Indicador de partido vencido sin resultado */}
+      {overdue && (
+        <div className="px-3 pb-2 flex items-center gap-1.5 text-[10px] text-red-400/70">
+          <AlertTriangle className="h-3 w-3" />
+          Fecha pasada sin resultado registrado
+        </div>
+      )}
     </div>
   );
 };
 
-// ── Contenido principal de liga ───────────────────────────────────────────────
+// ── Tabla de clasificación ─────────────────────────────────────────────────
+const StandingsTable = ({ standings, matches, isEmbedded = false, highlight3 = false }) => {
+  const cardBg = isEmbedded ? "bg-white/3 border border-white/5" : "bg-[#121212] border border-white/5";
+  return (
+    <div className={`${cardBg} rounded-xl overflow-hidden`}>
+      <div className="overflow-x-auto">
+        <table style={{ width: "100%", fontSize: "12px", borderCollapse: "collapse" }}>
+          <thead>
+            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              {[
+                { h: "#", align: "left", pl: "16px" },
+                { h: "Equipo", align: "left" },
+                { h: "PJ", align: "center" },
+                { h: "G",  align: "center", color: "rgba(74,222,128,0.7)" },
+                { h: "E",  align: "center" },
+                { h: "P",  align: "center", color: "rgba(248,113,113,0.7)" },
+                { h: "GF", align: "center" },
+                { h: "GC", align: "center" },
+                { h: "DG", align: "center" },
+                { h: "Pts", align: "center", color: "#DFFF00" },
+                { h: "Forma", align: "center" },
+              ].map(col => (
+                <th key={col.h} style={{ padding: "8px", paddingLeft: col.pl || "8px", textAlign: col.align, color: col.color || "rgba(240,239,232,0.25)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                  {col.h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {standings.map((row, idx) => {
+              const form = calcForm(row.team_id, matches);
+              const isTop3 = idx < 3;
+              return (
+                <tr key={row.team_id || row.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: highlight3 && isTop3 ? "rgba(223,255,0,0.02)" : "transparent" }}>
+                  <td style={{ padding: "10px 8px 10px 16px", color: "rgba(240,239,232,0.25)", fontWeight: highlight3 && isTop3 ? 700 : 400 }}>
+                    {highlight3 && isTop3
+                      ? <span style={{ color: ["#DFFF00","#aaa","#cd7f32"][idx] }}>{idx+1}</span>
+                      : idx + 1
+                    }
+                  </td>
+                  <td style={{ padding: "10px 8px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <TeamLogo team={row.team} size="sm" />
+                      <span style={{ fontWeight: 600, fontSize: "12px" }}>{row.team?.name}</span>
+                      {highlight3 && isTop3 && <span style={{ fontSize: "9px", color: "#DFFF00", fontWeight: 700 }}>→ Liguilla</span>}
+                    </div>
+                  </td>
+                  <td style={{ textAlign: "center", padding: "10px 8px", color: "rgba(240,239,232,0.4)" }}>{row.played}</td>
+                  <td style={{ textAlign: "center", padding: "10px 8px", color: "#4ade80", fontWeight: 600 }}>{row.won}</td>
+                  <td style={{ textAlign: "center", padding: "10px 8px", color: "rgba(240,239,232,0.4)" }}>{row.drawn}</td>
+                  <td style={{ textAlign: "center", padding: "10px 8px", color: "#f87171", fontWeight: 600 }}>{row.lost}</td>
+                  <td style={{ textAlign: "center", padding: "10px 8px", color: "rgba(240,239,232,0.5)" }}>{row.goals_for}</td>
+                  <td style={{ textAlign: "center", padding: "10px 8px", color: "rgba(240,239,232,0.5)" }}>{row.goals_against}</td>
+                  <td style={{ textAlign: "center", padding: "10px 8px", color: "rgba(240,239,232,0.4)" }}>
+                    {row.goal_difference > 0 ? `+${row.goal_difference}` : row.goal_difference}
+                  </td>
+                  <td style={{ textAlign: "center", padding: "10px 16px 10px 8px", fontWeight: 900, fontSize: "16px", color: "#DFFF00" }}>{row.points}</td>
+                  <td style={{ textAlign: "center", padding: "10px 12px" }}>
+                    <div style={{ display: "flex", gap: "2px", justifyContent: "center" }}>
+                      {form.length === 0
+                        ? <span style={{ color: "rgba(240,239,232,0.15)", fontSize: "10px" }}>—</span>
+                        : form.map((r, i) => <FormBadge key={i} result={r} />)
+                      }
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// ── LeagueContent ──────────────────────────────────────────────────────────
 export const LeagueContent = ({ isEmbedded = false }) => {
-  const [seasons, setSeasons]             = useState([]);
+  const [seasons, setSeasons] = useState([]);
   const [selectedSeason, setSelectedSeason] = useState(null);
-  const [rounds, setRounds]               = useState([]);
-  const [matches, setMatches]             = useState([]);
-  const [standings, setStandings]         = useState([]);
-  const [news, setNews]                   = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [filterRound, setFilterRound]     = useState("all");
+  const [grupos, setGrupos] = useState([]);
+  const [rounds, setRounds] = useState([]);
+  const [matches, setMatches] = useState([]);
+  const [standings, setStandings] = useState([]);
+  const [news, setNews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterRound, setFilterRound] = useState("all");
+  const [filterGrupo, setFilterGrupo] = useState("all");
 
   const fetchAll = useCallback(async (seasonId) => {
     setLoading(true);
     try {
-      const [roundsRes, matchesRes, standingsRes, newsRes] = await Promise.all([
+      const [roundsRes, matchesRes, standingsRes, newsRes, gruposRes] = await Promise.all([
         axios.get(`${BACKEND_URL}/api/league/rounds?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/matches?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/standings?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/news?season_id=${seasonId}`),
+        axios.get(`${BACKEND_URL}/api/league/grupos?season_id=${seasonId}`).catch(() => ({ data: [] })),
       ]);
       setRounds(roundsRes.data);
       setMatches(matchesRes.data);
       setStandings(standingsRes.data);
       setNews(newsRes.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      setGrupos(gruposRes.data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
@@ -201,12 +294,8 @@ export const LeagueContent = ({ isEmbedded = false }) => {
         const res = await axios.get(`${BACKEND_URL}/api/league/seasons`);
         setSeasons(res.data);
         const active = res.data.find(s => s.active) || res.data[0];
-        if (active) {
-          setSelectedSeason(active.id);
-          fetchAll(active.id);
-        } else {
-          setLoading(false);
-        }
+        if (active) { setSelectedSeason(active.id); fetchAll(active.id); }
+        else setLoading(false);
       } catch { setLoading(false); }
     };
     load();
@@ -214,25 +303,60 @@ export const LeagueContent = ({ isEmbedded = false }) => {
 
   const handleSeasonChange = (id) => { setSelectedSeason(id); fetchAll(id); };
 
-  const filteredMatches = filterRound === "all"
-    ? matches
-    : matches.filter(m => m.round_id === filterRound);
+  // Enriquecer partidos con info de grupo
+  const enrichedMatches = matches.map(m => {
+    const round = rounds.find(r => r.id === m.round_id);
+    const grupo = round?.grupo_id ? grupos.find(g => g.id === round.grupo_id) : null;
+    return { ...m, _grupo: grupo, _esLiguilla: round?.es_liguilla || false };
+  });
 
-  const currentSeasonLabel = seasons.find(s => s.id === selectedSeason)?.name || "Liga";
-  const emptyText = { color: "rgba(240,239,232,0.25)" };
-  const cardBg = isEmbedded ? "bg-white/3 border border-white/5" : "bg-[#121212] border border-white/5";
+  const filteredMatches = enrichedMatches.filter(m => {
+    if (filterRound !== "all" && m.round_id !== filterRound) return false;
+    if (filterGrupo === "liguilla") return m._esLiguilla;
+    if (filterGrupo !== "all") return m._grupo?.id === filterGrupo;
+    return true;
+  });
 
-  // Top goleadores calculados desde partidos
+  // Clasificación por grupo
+  const getStandingsForGrupo = (grupoId) => {
+    // Para mostrar clasificación por grupo necesitamos saber qué equipos pertenecen al grupo
+    // Aproximamos mirando los partidos del grupo para identificar teams
+    const grupoRoundIds = rounds.filter(r => r.grupo_id === grupoId && !r.es_liguilla).map(r => r.id);
+    const grupoMatchTeams = new Set();
+    matches.filter(m => grupoRoundIds.includes(m.round_id)).forEach(m => {
+      grupoMatchTeams.add(m.home_team_id);
+      grupoMatchTeams.add(m.away_team_id);
+    });
+    if (grupoMatchTeams.size === 0) return [];
+    return standings.filter(s => grupoMatchTeams.has(s.team_id))
+      .sort((a, b) => b.points - a.points || b.goal_difference - a.goal_difference || b.goals_for - a.goals_for);
+  };
+
+  const liguillaDefined = rounds.some(r => r.es_liguilla);
+  const liguillaMatchTeams = new Set();
+  matches.filter(m => rounds.find(r => r.id === m.round_id)?.es_liguilla).forEach(m => {
+    liguillaMatchTeams.add(m.home_team_id);
+    liguillaMatchTeams.add(m.away_team_id);
+  });
+  const liguillaStandings = standings.filter(s => liguillaMatchTeams.has(s.team_id))
+    .sort((a, b) => b.points - a.points || b.goal_difference - a.goal_difference);
+
+  const overdueCount = enrichedMatches.filter(m => isMatchOverdue(m)).length;
+
   const topScorers = [];
   matches.filter(m => m.status === "finished").forEach(m => {
     [...(m.home_scorers || []), ...(m.away_scorers || [])].forEach(s => {
       if (!s.name) return;
       const found = topScorers.find(t => t.name === s.name);
-      if (found) found.goals++;
-      else topScorers.push({ name: s.name, goals: 1 });
+      if (found) found.goals++; else topScorers.push({ name: s.name, goals: 1 });
     });
   });
   topScorers.sort((a, b) => b.goals - a.goals);
+
+  const emptyText = { color: "rgba(240,239,232,0.25)" };
+  const cardBg = isEmbedded ? "bg-white/3 border border-white/5" : "bg-[#121212] border border-white/5";
+  const finishedCount = matches.filter(m => m.status === "finished").length;
+  const totalGoals = matches.reduce((a, m) => a + (m.home_score || 0) + (m.away_score || 0), 0);
 
   if (loading) return <div className="text-center py-16" style={emptyText}>Cargando liga...</div>;
 
@@ -249,13 +373,18 @@ export const LeagueContent = ({ isEmbedded = false }) => {
     <div className="space-y-4">
       {seasons.length > 1 && (
         <Select value={selectedSeason} onValueChange={handleSeasonChange}>
-          <SelectTrigger className="w-44 bg-white/5 border-white/10 text-sm">
-            <SelectValue />
-          </SelectTrigger>
+          <SelectTrigger className="w-44 bg-white/5 border-white/10 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent className="bg-[#121212] border-white/10">
             {seasons.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
           </SelectContent>
         </Select>
+      )}
+
+      {overdueCount > 0 && (
+        <div className="flex items-center gap-2 p-2.5 bg-red-500/5 border border-red-500/20 rounded-lg text-xs text-red-400">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          {overdueCount} partido{overdueCount > 1 ? "s" : ""} con fecha pasada sin resultado registrado
+        </div>
       )}
 
       <Tabs defaultValue="matches">
@@ -266,11 +395,8 @@ export const LeagueContent = ({ isEmbedded = false }) => {
             { value: "stats",     Icon: TrendingUp,  label: "Estadísticas" },
             { value: "news",      Icon: Newspaper,   label: "Noticias" },
           ].map(({ value, Icon, label }) => (
-            <TabsTrigger
-              key={value}
-              value={value}
-              className="flex items-center gap-1.5 py-2 text-[11px] data-[state=active]:bg-[#DFFF00] data-[state=active]:text-black"
-            >
+            <TabsTrigger key={value} value={value}
+              className="flex items-center gap-1.5 py-2 text-[11px] data-[state=active]:bg-[#DFFF00] data-[state=active]:text-black">
               <Icon className="h-3.5 w-3.5" />{label}
             </TabsTrigger>
           ))}
@@ -278,25 +404,45 @@ export const LeagueContent = ({ isEmbedded = false }) => {
 
         {/* ── PARTIDOS ── */}
         <TabsContent value="matches" className="space-y-3">
-          <Select value={filterRound} onValueChange={setFilterRound}>
-            <SelectTrigger className="w-44 bg-white/5 border-white/10 text-xs h-8">
-              <SelectValue placeholder="Todas las jornadas" />
-            </SelectTrigger>
-            <SelectContent className="bg-[#121212] border-white/10">
-              <SelectItem value="all">Todas las jornadas</SelectItem>
-              {rounds.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2 flex-wrap">
+            {grupos.length >= 2 && (
+              <Select value={filterGrupo} onValueChange={setFilterGrupo}>
+                <SelectTrigger className="w-44 bg-white/5 border-white/10 text-xs h-8">
+                  <SelectValue placeholder="Todos los grupos" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#121212] border-white/10">
+                  <SelectItem value="all">Todos los partidos</SelectItem>
+                  <SelectItem value="liguilla"><span className="text-[#DFFF00]">🏆 Liguilla</span></SelectItem>
+                  {grupos.map(g => (
+                    <SelectItem key={g.id} value={g.id}>
+                      <span className={g.region === "insular" ? "text-blue-400" : "text-amber-400"}>{g.nombre}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Select value={filterRound} onValueChange={setFilterRound}>
+              <SelectTrigger className="w-40 bg-white/5 border-white/10 text-xs h-8">
+                <SelectValue placeholder="Todas las jornadas" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#121212] border-white/10">
+                <SelectItem value="all">Todas las jornadas</SelectItem>
+                {rounds.map(r => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}{r.es_liguilla ? " 🏆" : ""}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {filteredMatches.length === 0 ? (
             <div className="text-center py-10" style={emptyText}>
               <Calendar size={32} style={{ margin: "0 auto 8px", opacity: 0.2 }} />
-              <p style={{ fontSize: "13px" }}>No hay partidos en esta jornada</p>
+              <p style={{ fontSize: "13px" }}>No hay partidos en esta selección</p>
             </div>
           ) : (
             <div className="space-y-1.5">
               {filteredMatches.map(match => (
-                <MatchCardPublic key={match.id} match={match} isEmbedded={isEmbedded} />
+                <MatchCardPublic key={match.id} match={match} isEmbedded={isEmbedded} grupos={grupos} rounds={rounds} />
               ))}
             </div>
           )}
@@ -309,100 +455,47 @@ export const LeagueContent = ({ isEmbedded = false }) => {
               <Trophy size={32} style={{ margin: "0 auto 8px", opacity: 0.2 }} />
               <p style={{ fontSize: "13px" }}>Sin datos aún</p>
             </div>
-          ) : (
-            <div className={`${cardBg} rounded-xl overflow-hidden`}>
-              <div className="px-4 py-3 border-b border-white/5">
-                <p style={{ fontSize: "12px", fontWeight: 700, color: "rgba(240,239,232,0.5)" }}>{currentSeasonLabel}</p>
-              </div>
-              <div className="overflow-x-auto">
-                <table style={{ width: "100%", fontSize: "12px", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                      {[
-                        { h: "#", align: "left", pl: "16px" },
-                        { h: "Equipo", align: "left" },
-                        { h: "PJ", align: "center" },
-                        { h: "G",  align: "center", color: "rgba(74,222,128,0.7)" },
-                        { h: "E",  align: "center" },
-                        { h: "P",  align: "center", color: "rgba(248,113,113,0.7)" },
-                        { h: "GF", align: "center" },
-                        { h: "GC", align: "center" },
-                        { h: "DG", align: "center" },
-                        { h: "Pts", align: "center", color: "#DFFF00" },
-                        { h: "Forma", align: "center" },
-                      ].map(col => (
-                        <th key={col.h} style={{
-                          padding: "8px",
-                          paddingLeft: col.pl || "8px",
-                          textAlign: col.align,
-                          color: col.color || "rgba(240,239,232,0.25)",
-                          fontSize: "10px",
-                          fontWeight: 700,
-                          letterSpacing: "0.1em",
-                          textTransform: "uppercase",
-                          whiteSpace: "nowrap",
-                        }}>{col.h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {standings.map((row, idx) => {
-                      const form = calcForm(row.team_id, matches);
-                      const isTop3 = row.position <= 3;
-                      return (
-                        <tr key={row.id} style={{
-                          borderBottom: "1px solid rgba(255,255,255,0.04)",
-                          background: isTop3 ? "rgba(223,255,0,0.02)" : "transparent",
-                        }}>
-                          <td style={{ padding: "10px 8px 10px 16px", color: "rgba(240,239,232,0.25)", fontWeight: isTop3 ? 700 : 400 }}>
-                            {row.position <= 3 && (
-                              <span style={{ color: ["#DFFF00","#aaa","#cd7f32"][row.position-1] }}>
-                                {row.position}
-                              </span>
-                            )}
-                            {row.position > 3 && row.position}
-                          </td>
-                          <td style={{ padding: "10px 8px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                              <TeamLogo team={row.team} size="sm" />
-                              <span style={{ fontWeight: 600, fontSize: "12px" }}>{row.team?.name}</span>
-                            </div>
-                          </td>
-                          <td style={{ textAlign: "center", padding: "10px 8px", color: "rgba(240,239,232,0.4)" }}>{row.played}</td>
-                          <td style={{ textAlign: "center", padding: "10px 8px", color: "#4ade80", fontWeight: 600 }}>{row.won}</td>
-                          <td style={{ textAlign: "center", padding: "10px 8px", color: "rgba(240,239,232,0.4)" }}>{row.drawn}</td>
-                          <td style={{ textAlign: "center", padding: "10px 8px", color: "#f87171", fontWeight: 600 }}>{row.lost}</td>
-                          <td style={{ textAlign: "center", padding: "10px 8px", color: "rgba(240,239,232,0.5)" }}>{row.goals_for}</td>
-                          <td style={{ textAlign: "center", padding: "10px 8px", color: "rgba(240,239,232,0.5)" }}>{row.goals_against}</td>
-                          <td style={{ textAlign: "center", padding: "10px 8px", color: "rgba(240,239,232,0.4)" }}>
-                            {row.goal_difference > 0 ? `+${row.goal_difference}` : row.goal_difference}
-                          </td>
-                          <td style={{ textAlign: "center", padding: "10px 16px 10px 8px", fontWeight: 900, fontSize: "16px", color: "#DFFF00" }}>{row.points}</td>
-                          <td style={{ textAlign: "center", padding: "10px 12px" }}>
-                            <div style={{ display: "flex", gap: "2px", justifyContent: "center" }}>
-                              {form.length === 0
-                                ? <span style={{ color: "rgba(240,239,232,0.15)", fontSize: "10px" }}>—</span>
-                                : form.map((r, i) => <FormBadge key={i} result={r} />)
-                              }
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+          ) : grupos.length >= 2 ? (
+            // Clasificación por grupos
+            <div className="space-y-5">
+              {grupos.map(grupo => {
+                const grupoRows = getStandingsForGrupo(grupo.id);
+                if (grupoRows.length === 0) return null;
+                return (
+                  <div key={grupo.id}>
+                    <div className={`flex items-center gap-2 mb-2`}>
+                      <span className={`text-xs font-bold uppercase tracking-wide ${grupo.region === "insular" ? "text-blue-400" : "text-amber-400"}`}>
+                        {grupo.nombre}
+                      </span>
+                      <div className={`flex-1 h-px ${grupo.region === "insular" ? "bg-blue-500/20" : "bg-amber-500/20"}`} />
+                      <span className="text-[9px] text-zinc-600">Top 3 → Liguilla</span>
+                    </div>
+                    <StandingsTable standings={grupoRows} matches={matches} isEmbedded={isEmbedded} highlight3={true} />
+                  </div>
+                );
+              })}
+              {liguillaDefined && liguillaStandings.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wide text-[#DFFF00]">🏆 Liguilla Final</span>
+                    <div className="flex-1 h-px bg-[#DFFF00]/20" />
+                  </div>
+                  <StandingsTable standings={liguillaStandings} matches={matches} isEmbedded={isEmbedded} highlight3={false} />
+                </div>
+              )}
             </div>
+          ) : (
+            // Clasificación general
+            <StandingsTable standings={standings} matches={matches} isEmbedded={isEmbedded} />
           )}
         </TabsContent>
 
         {/* ── ESTADÍSTICAS ── */}
         <TabsContent value="stats" className="space-y-5">
-          {/* Resumen general */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "Partidos jugados", value: matches.filter(m => m.status === "finished").length, color: "#DFFF00" },
-              { label: "Goles totales", value: matches.reduce((a, m) => a + (m.home_score || 0) + (m.away_score || 0), 0), color: "#4ade80" },
+              { label: "Partidos jugados", value: finishedCount, color: "#DFFF00" },
+              { label: "Goles totales", value: totalGoals, color: "#4ade80" },
               { label: "Equipos", value: standings.length, color: "#60a5fa" },
               { label: "Jornadas", value: rounds.length, color: "#c084fc" },
             ].map(stat => (
@@ -413,7 +506,6 @@ export const LeagueContent = ({ isEmbedded = false }) => {
             ))}
           </div>
 
-          {/* Máximos goleadores */}
           {topScorers.length > 0 && (
             <div>
               <h3 style={{ fontSize: "11px", fontWeight: 700, color: "rgba(240,239,232,0.35)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "10px" }}>
@@ -422,61 +514,14 @@ export const LeagueContent = ({ isEmbedded = false }) => {
               <div className="space-y-1.5">
                 {topScorers.slice(0, 10).map((s, i) => (
                   <div key={s.name} className={`flex items-center gap-3 px-3 py-2.5 ${cardBg} rounded-lg`}>
-                    <span style={{ fontSize: "11px", fontWeight: 900, color: i < 3 ? "#DFFF00" : "rgba(240,239,232,0.25)", width: "20px", textAlign: "center" }}>
-                      {i + 1}
-                    </span>
+                    <span style={{ fontSize: "11px", fontWeight: 900, color: i < 3 ? "#DFFF00" : "rgba(240,239,232,0.25)", width: "20px", textAlign: "center" }}>{i + 1}</span>
                     {i === 0 && <Star size={12} style={{ color: "#DFFF00", flexShrink: 0 }} />}
                     <span style={{ flex: 1, fontSize: "13px", fontWeight: 600 }}>{s.name}</span>
-                    <span style={{ fontSize: "18px", fontWeight: 900, color: "#DFFF00" }}>
-                      {s.goals}
-                    </span>
+                    <span style={{ fontSize: "18px", fontWeight: 900, color: "#DFFF00" }}>{s.goals}</span>
                     <span style={{ fontSize: "10px", color: "rgba(240,239,232,0.25)" }}>gol{s.goals !== 1 ? "es" : ""}</span>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Rendimiento por equipo */}
-          {standings.length > 0 && (
-            <div>
-              <h3 style={{ fontSize: "11px", fontWeight: 700, color: "rgba(240,239,232,0.35)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "10px" }}>
-                Rendimiento ofensivo / defensivo
-              </h3>
-              <div className="space-y-1.5">
-                {standings.map(row => {
-                  const gpg = row.played ? (row.goals_for / row.played).toFixed(1) : "0.0";
-                  const gcpg = row.played ? (row.goals_against / row.played).toFixed(1) : "0.0";
-                  const winPct = row.played ? Math.round((row.won / row.played) * 100) : 0;
-                  return (
-                    <div key={row.id} className={`flex items-center gap-3 px-3 py-2.5 ${cardBg} rounded-lg`}>
-                      <TeamLogo team={row.team} size="sm" />
-                      <span style={{ flex: 1, fontSize: "12px", fontWeight: 600, minWidth: 0 }} className="truncate">{row.team?.name}</span>
-                      <div style={{ display: "flex", gap: "16px", flexShrink: 0 }}>
-                        <div style={{ textAlign: "center" }}>
-                          <p style={{ fontSize: "14px", fontWeight: 900, color: "#4ade80" }}>{gpg}</p>
-                          <p style={{ fontSize: "9px", color: "rgba(240,239,232,0.25)" }}>GF/PJ</p>
-                        </div>
-                        <div style={{ textAlign: "center" }}>
-                          <p style={{ fontSize: "14px", fontWeight: 900, color: "#f87171" }}>{gcpg}</p>
-                          <p style={{ fontSize: "9px", color: "rgba(240,239,232,0.25)" }}>GC/PJ</p>
-                        </div>
-                        <div style={{ textAlign: "center" }}>
-                          <p style={{ fontSize: "14px", fontWeight: 900, color: "#DFFF00" }}>{winPct}%</p>
-                          <p style={{ fontSize: "9px", color: "rgba(240,239,232,0.25)" }}>Victorias</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {topScorers.length === 0 && standings.length === 0 && (
-            <div className="text-center py-10" style={emptyText}>
-              <TrendingUp size={32} style={{ margin: "0 auto 8px", opacity: 0.2 }} />
-              <p style={{ fontSize: "13px" }}>Las estadísticas aparecerán con los primeros resultados</p>
             </div>
           )}
         </TabsContent>
@@ -492,18 +537,12 @@ export const LeagueContent = ({ isEmbedded = false }) => {
             <div key={item.id} className={`p-4 ${cardBg} rounded-xl`}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px", marginBottom: "6px" }}>
                 <h3 style={{ fontWeight: 700, color: "#DFFF00", fontSize: "14px" }}>{item.title}</h3>
-                <span style={{
-                  fontSize: "10px", padding: "2px 7px", borderRadius: "4px", whiteSpace: "nowrap",
-                  background: item.priority === "high" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.05)",
-                  color: item.priority === "high" ? "#f87171" : "rgba(240,239,232,0.3)",
-                }}>
+                <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", whiteSpace: "nowrap", background: item.priority === "high" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.05)", color: item.priority === "high" ? "#f87171" : "rgba(240,239,232,0.3)" }}>
                   {item.priority === "high" ? "URGENTE" : "INFO"}
                 </span>
               </div>
               {item.content && <p style={{ color: "rgba(240,239,232,0.45)", fontSize: "12px", lineHeight: "1.6" }}>{item.content}</p>}
-              <p style={{ color: "rgba(240,239,232,0.18)", fontSize: "10px", marginTop: "6px" }}>
-                {new Date(item.created_at).toLocaleDateString("es-ES")}
-              </p>
+              <p style={{ color: "rgba(240,239,232,0.18)", fontSize: "10px", marginTop: "6px" }}>{new Date(item.created_at).toLocaleDateString("es-ES")}</p>
             </div>
           ))}
         </TabsContent>
@@ -512,14 +551,15 @@ export const LeagueContent = ({ isEmbedded = false }) => {
   );
 };
 
-// ── Página standalone /liga ───────────────────────────────────────────────────
+// ── Página standalone /liga ────────────────────────────────────────────────
 const LeaguePublic = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const [fedModal, setFedModal]     = useState(false);
-  const [fedUser, setFedUser]       = useState("");
-  const [fedPass, setFedPass]       = useState("");
-  const [fedError, setFedError]     = useState("");
+  const [fedModal, setFedModal] = useState(false);
+  const [fedUser, setFedUser] = useState("");
+  const [fedPass, setFedPass] = useState("");
+  const [fedError, setFedError] = useState("");
   const [fedLoading, setFedLoading] = useState(false);
 
   const handleFedLogin = async () => {
@@ -531,11 +571,12 @@ const LeaguePublic = () => {
         club_name: fedUser,
         password: fedPass,
       });
-      // El login unificado detecta institution_type === 'federation' y redirige
-      const { useAuth } = await import("@/App");
-      // Guardamos como club_user igual que el resto y dejamos que App.js redirija
+      // Guardar en localStorage como lo haría el login normal
       localStorage.setItem("club_user", JSON.stringify(res.data));
-      navigate(res.data.institution_type === "federation" ? "/federation/dashboard" : "/club/dashboard");
+      // Si ya está logueado como admin, no pisar ese estado
+      window.location.href = res.data.institution_type === "federation"
+        ? "/federation/dashboard"
+        : "/club/dashboard";
     } catch {
       setFedError("Credenciales incorrectas");
       setFedPass("");
@@ -547,136 +588,47 @@ const LeaguePublic = () => {
   return (
     <>
       <style>{`
-        .league-public {
-          min-height: 100dvh;
-          background: #050505;
-          color: #F0EFE8;
-          font-family: 'Manrope', sans-serif;
-        }
-        .lp-header {
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-          background: rgba(5,5,5,0.9);
-          backdrop-filter: blur(16px);
-          position: sticky;
-          top: 0;
-          z-index: 50;
-        }
-        .lp-header-inner {
-          max-width: 900px;
-          margin: 0 auto;
-          padding: 14px 16px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-        }
+        .league-public { min-height: 100dvh; background: #050505; color: #F0EFE8; font-family: 'Manrope', sans-serif; }
+        .lp-header { border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(5,5,5,0.9); backdrop-filter: blur(16px); position: sticky; top: 0; z-index: 50; }
+        .lp-header-inner { max-width: 900px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
         .lp-brand { display: flex; align-items: center; gap: 10px; }
-        .lp-brand-logo {
-          height: 28px;
-          filter: brightness(0) invert(1);
-          opacity: 0.85;
-          cursor: pointer;
-        }
+        .lp-brand-logo { height: 28px; filter: brightness(0) invert(1); opacity: 0.85; cursor: pointer; }
         .lp-brand-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.1); }
-        .lp-brand-tag {
-          font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
-          text-transform: uppercase; color: rgba(240,239,232,0.4);
-        }
+        .lp-brand-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(240,239,232,0.4); }
         .lp-actions { display: flex; align-items: center; gap: 8px; }
-        .btn-portal {
-          display: flex; align-items: center; gap: 6px;
-          background: #DFFF00; color: #050505;
-          font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
-          padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer;
-          font-family: 'Barlow Condensed', inherit; transition: background 0.15s; white-space: nowrap;
-        }
+        .btn-portal { display: flex; align-items: center; gap: 6px; background: #DFFF00; color: #050505; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-family: 'Barlow Condensed', inherit; transition: background 0.15s; white-space: nowrap; }
         .btn-portal:hover { background: #f0ff33; }
-
-        /* Botón de federación — siempre visible */
-        .btn-fed {
-          display: flex; align-items: center; gap: 6px;
-          background: rgba(223,255,0,0.08);
-          color: rgba(223,255,0,0.7);
-          font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-          padding: 7px 12px; border-radius: 6px;
-          border: 1px solid rgba(223,255,0,0.2);
-          cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap;
-        }
-        .btn-fed:hover {
-          background: rgba(223,255,0,0.14);
-          border-color: rgba(223,255,0,0.4);
-          color: #DFFF00;
-        }
-
+        .btn-fed { display: flex; align-items: center; gap: 6px; background: rgba(223,255,0,0.08); color: rgba(223,255,0,0.7); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 12px; border-radius: 6px; border: 1px solid rgba(223,255,0,0.2); cursor: pointer; font-family: inherit; transition: all 0.15s; white-space: nowrap; }
+        .btn-fed:hover { background: rgba(223,255,0,0.14); border-color: rgba(223,255,0,0.4); color: #DFFF00; }
         .lp-main { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
         .lp-hero { margin-bottom: 20px; }
-        .lp-hero h1 {
-          font-family: 'Barlow Condensed', sans-serif;
-          font-size: clamp(24px, 5vw, 44px); font-weight: 900;
-          text-transform: uppercase; letter-spacing: -0.02em; color: #F0EFE8;
-        }
+        .lp-hero h1 { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(24px, 5vw, 44px); font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; color: #F0EFE8; }
         .lp-hero h1 em { font-style: normal; color: #DFFF00; }
-
-        .fed-overlay {
-          position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-          display: flex; align-items: center; justify-content: center;
-          z-index: 100; padding: 20px; backdrop-filter: blur(4px);
-        }
-        .fed-modal {
-          background: #0f0f0f; border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 340px; position: relative;
-        }
-        .fed-modal-close {
-          position: absolute; top: 12px; right: 12px;
-          background: rgba(255,255,255,0.05); border: none; border-radius: 50%;
-          width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-          cursor: pointer; color: rgba(240,239,232,0.4); font-size: 13px;
-        }
+        .fed-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(4px); }
+        .fed-modal { background: #0f0f0f; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 340px; position: relative; }
+        .fed-modal-close { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.05); border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(240,239,232,0.4); font-size: 13px; }
         .fed-modal-close:hover { color: #ff7070; }
-        .fed-input {
-          width: 100%; background: #181818; border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 8px; padding: 11px 13px; color: #F0EFE8; font-size: 14px;
-          font-family: inherit; outline: none; margin-top: 6px; box-sizing: border-box;
-          transition: border-color 0.15s;
-        }
+        .fed-input { width: 100%; background: #181818; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 11px 13px; color: #F0EFE8; font-size: 14px; font-family: inherit; outline: none; margin-top: 6px; box-sizing: border-box; transition: border-color 0.15s; }
         .fed-input:focus { border-color: rgba(223,255,0,0.4); }
-        .fed-label {
-          font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-          color: rgba(240,239,232,0.3); display: block; margin-top: 14px;
-        }
-        .fed-btn {
-          width: 100%; background: #DFFF00; color: #050505;
-          font-family: 'Barlow Condensed', inherit; font-size: 13px; font-weight: 800;
-          letter-spacing: 0.12em; text-transform: uppercase; padding: 12px; border: none;
-          border-radius: 8px; cursor: pointer; margin-top: 18px; transition: background 0.15s;
-        }
+        .fed-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(240,239,232,0.3); display: block; margin-top: 14px; }
+        .fed-btn { width: 100%; background: #DFFF00; color: #050505; font-family: 'Barlow Condensed', inherit; font-size: 13px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px; border: none; border-radius: 8px; cursor: pointer; margin-top: 18px; transition: background 0.15s; }
         .fed-btn:hover:not(:disabled) { background: #f0ff33; }
         .fed-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .fed-error {
-          background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.2);
-          border-radius: 6px; color: #ff7070; font-size: 12px; padding: 8px 12px; margin-top: 10px;
-        }
-        @media (max-width: 400px) {
-          .lp-brand-tag { display: none; }
-          .lp-brand-divider { display: none; }
-        }
+        .fed-error { background: rgba(255,80,80,0.08); border: 1px solid rgba(255,80,80,0.2); border-radius: 6px; color: #ff7070; font-size: 12px; padding: 8px 12px; margin-top: 10px; }
+        @media (max-width: 400px) { .lp-brand-tag { display: none; } .lp-brand-divider { display: none; } }
       `}</style>
 
       <div className="league-public">
         <header className="lp-header">
           <div className="lp-header-inner">
             <div className="lp-brand">
-              <img
-                className="lp-brand-logo"
+              <img className="lp-brand-logo"
                 src="https://customer-assets.emergentagent.com/job_adivina-portal/artifacts/rexq8hh7_A56B5578-48F3-41C0-A247-75CAB5930CA5.png"
-                alt="ADIVINA"
-                onClick={() => navigate("/")}
-              />
+                alt="ADIVINA" onClick={() => navigate("/")} />
               <div className="lp-brand-divider" />
               <span className="lp-brand-tag">Liga EG</span>
             </div>
             <div className="lp-actions">
-              {/* Botón de federación siempre visible */}
               <button className="btn-fed" onClick={() => setFedModal(true)}>
                 <Shield size={11} />
                 Portal Federación
@@ -695,11 +647,11 @@ const LeaguePublic = () => {
               Resultados, clasificación y estadísticas en tiempo real
             </p>
           </div>
-
           <LeagueContent isEmbedded={false} />
         </main>
       </div>
 
+      {/* Modal federación — acceso directo, sin pasar por /member-club */}
       {fedModal && (
         <div className="fed-overlay" onClick={e => { if (e.target.classList.contains("fed-overlay")) setFedModal(false); }}>
           <div className="fed-modal">
@@ -711,9 +663,9 @@ const LeaguePublic = () => {
                   Acceso Federación
                 </span>
               </div>
-              <p style={{ fontSize: "12px", color: "rgba(240,239,232,0.35)" }}>Panel de gestión federativa</p>
+              <p style={{ fontSize: "12px", color: "rgba(240,239,232,0.35)" }}>Portal exclusivo de gestión federativa</p>
             </div>
-            <label className="fed-label">Usuario / Nombre de federación</label>
+            <label className="fed-label">Usuario / Nombre de la federación</label>
             <input className="fed-input" type="text" value={fedUser}
               onChange={e => setFedUser(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleFedLogin()} />
@@ -723,7 +675,7 @@ const LeaguePublic = () => {
               onKeyDown={e => e.key === "Enter" && handleFedLogin()} />
             {fedError && <div className="fed-error">{fedError}</div>}
             <button className="fed-btn" onClick={handleFedLogin} disabled={fedLoading}>
-              {fedLoading ? "Comprobando..." : "Entrar al panel"}
+              {fedLoading ? "Comprobando..." : "Entrar al portal federativo"}
             </button>
           </div>
         </div>
