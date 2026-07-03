@@ -12,10 +12,10 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const STATUS_CONFIG = {
   scheduled: { label: "Programado", color: "bg-blue-500/20 text-blue-400" },
-  live:      { label: "En Juego",   color: "bg-green-500/20 text-green-400" },
-  finished:  { label: "Finalizado", color: "bg-zinc-700/50 text-zinc-400" },
-  postponed: { label: "Aplazado",   color: "bg-yellow-500/20 text-yellow-400" },
-  overdue:   { label: "No jugado",  color: "bg-red-500/20 text-red-400" },
+  live: { label: "En Juego", color: "bg-green-500/20 text-green-400" },
+  finished: { label: "Finalizado", color: "bg-zinc-700/50 text-zinc-400" },
+  postponed: { label: "Aplazado", color: "bg-yellow-500/20 text-yellow-400" },
+  overdue: { label: "No jugado", color: "bg-red-500/20 text-red-400" },
 };
 
 // Detectar partido cuya fecha pasó sin resultado
@@ -89,13 +89,12 @@ const MatchCard = ({ match, myTeamId, grupos = [], rounds = [] }) => {
 
   return (
     <div
-      className={`p-3 sm:p-4 rounded-xl border transition-all ${
-        overdue
+      className={`p-3 sm:p-4 rounded-xl border transition-all ${overdue
           ? "bg-red-500/5 border-red-500/20"
           : isMyMatch
             ? "bg-[#DFFF00]/5 border-[#DFFF00]/20 hover:border-[#DFFF00]/40"
             : "bg-[#121212] border-white/5 hover:border-white/10"
-      } ${hasScorers ? "cursor-pointer" : ""}`}
+        } ${hasScorers ? "cursor-pointer" : ""}`}
       onClick={() => hasScorers && setExpanded(e => !e)}
     >
       {/* Cabecera */}
@@ -110,9 +109,8 @@ const MatchCard = ({ match, myTeamId, grupos = [], rounds = [] }) => {
           <span className="text-[10px] bg-[#DFFF00]/15 text-[#DFFF00] font-bold px-1.5 py-0.5 rounded">🏆 Liguilla</span>
         )}
         {grupo && !esLiguilla && (
-          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
-            grupo.region === "insular" ? "bg-blue-500/15 text-blue-400" : "bg-amber-500/15 text-amber-400"
-          }`}>{grupo.nombre}</span>
+          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${grupo.region === "insular" ? "bg-blue-500/15 text-blue-400" : "bg-amber-500/15 text-amber-400"
+            }`}>{grupo.nombre}</span>
         )}
         {match.match_date && (
           <span className={`text-xs ${overdue ? "text-red-400/70" : "text-zinc-600"}`}>
@@ -127,9 +125,8 @@ const MatchCard = ({ match, myTeamId, grupos = [], rounds = [] }) => {
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
           <TeamLogo team={match.home_team} />
-          <span className={`text-xs font-semibold text-center leading-tight line-clamp-2 max-w-[80px] sm:max-w-none ${
-            match.home_team_id === myTeamId ? "text-[#DFFF00]" : overdue ? "text-zinc-500" : "text-white"
-          }`}>
+          <span className={`text-xs font-semibold text-center leading-tight line-clamp-2 max-w-[80px] sm:max-w-none ${match.home_team_id === myTeamId ? "text-[#DFFF00]" : overdue ? "text-zinc-500" : "text-white"
+            }`}>
             {match.home_team?.name}
           </span>
         </div>
@@ -150,9 +147,8 @@ const MatchCard = ({ match, myTeamId, grupos = [], rounds = [] }) => {
 
         <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
           <TeamLogo team={match.away_team} />
-          <span className={`text-xs font-semibold text-center leading-tight line-clamp-2 max-w-[80px] sm:max-w-none ${
-            match.away_team_id === myTeamId ? "text-[#DFFF00]" : overdue ? "text-zinc-500" : "text-white"
-          }`}>
+          <span className={`text-xs font-semibold text-center leading-tight line-clamp-2 max-w-[80px] sm:max-w-none ${match.away_team_id === myTeamId ? "text-[#DFFF00]" : overdue ? "text-zinc-500" : "text-white"
+            }`}>
             {match.away_team?.name}
           </span>
         </div>
@@ -220,12 +216,11 @@ const StandingsTable = ({ standings, matches, myTeamId, highlight3 = false }) =>
               const isMe = row.team_id === myTeamId;
               const form = calcForm(row.team_id, matches);
               return (
-                <tr key={row.team_id || row.id} className={`border-b border-white/5 transition-colors ${
-                  isMe ? "bg-[#DFFF00]/10 hover:bg-[#DFFF00]/15" : "hover:bg-white/3"
-                }`}>
+                <tr key={row.team_id || row.id} className={`border-b border-white/5 transition-colors ${isMe ? "bg-[#DFFF00]/10 hover:bg-[#DFFF00]/15" : "hover:bg-white/3"
+                  }`}>
                   <td className="py-3 pl-4 text-zinc-500 font-mono text-xs">
                     {highlight3 && idx < 3
-                      ? <span style={{ color: ["#DFFF00","#aaa","#cd7f32"][idx] }}>{idx+1}</span>
+                      ? <span style={{ color: ["#DFFF00", "#aaa", "#cd7f32"][idx] }}>{idx + 1}</span>
                       : idx + 1
                     }
                   </td>
@@ -289,6 +284,7 @@ const ClubLeague = () => {
   const [seasons, setSeasons] = useState([]);
   const [selectedSeason, setSelectedSeason] = useState(null);
   const [grupos, setGrupos] = useState([]);
+  const [teamGrupos, setTeamGrupos] = useState([]);
   const [rounds, setRounds] = useState([]);
   const [matches, setMatches] = useState([]);
   const [standings, setStandings] = useState([]);
@@ -301,12 +297,13 @@ const ClubLeague = () => {
   const fetchAll = useCallback(async (seasonId) => {
     setLoading(true);
     try {
-      const [roundsRes, matchesRes, standingsRes, newsRes, gruposRes] = await Promise.all([
+      const [roundsRes, matchesRes, standingsRes, newsRes, gruposRes, teamGruposRes] = await Promise.all([
         axios.get(`${BACKEND_URL}/api/league/rounds?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/matches?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/standings?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/news?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/grupos?season_id=${seasonId}`).catch(() => ({ data: [] })),
+        axios.get(`${BACKEND_URL}/api/league/team-grupos?season_id=${seasonId}`).catch(() => ({ data: [] }))
       ]);
 
       const roundsData = roundsRes.data;
@@ -317,6 +314,7 @@ const ClubLeague = () => {
       setStandings(standingsRes.data);
       setNews(newsRes.data);
       setGrupos(gruposRes.data);
+      setTeamGrupos(teamGruposRes.data);
       setFilterRound(getDefaultRound(roundsData, matchesData));
 
       // Buscar equipo del club
@@ -329,7 +327,7 @@ const ClubLeague = () => {
             const teamsRes = await axios.get(`${BACKEND_URL}/api/league/teams`);
             const myTeam = teamsRes.data.find(t => t.adivina_club_id === user.club_id);
             if (myTeam) setMyTeamId(myTeam.id);
-          } catch {}
+          } catch { }
         }
       }
     } catch (err) { console.error(err); }
@@ -364,16 +362,23 @@ const ClubLeague = () => {
     return true;
   });
 
-  // Clasificación por grupo (infiriendo del grupo de las jornadas)
+  // Clasificación por grupo: asignación explícita como fuente de verdad,
+  // con fallback a inferencia por partidos para temporadas antiguas sin asignación
   const getStandingsForGrupo = (grupoId) => {
-    const grupoRoundIds = rounds.filter(r => r.grupo_id === grupoId && !r.es_liguilla).map(r => r.id);
-    const teamSet = new Set();
-    matches.filter(m => grupoRoundIds.includes(m.round_id)).forEach(m => {
-      teamSet.add(m.home_team_id);
-      teamSet.add(m.away_team_id);
-    });
-    if (teamSet.size === 0) return [];
-    return standings.filter(s => teamSet.has(s.team_id))
+    const assignedTeamIds = new Set(
+      teamGrupos.filter(tg => tg.grupo_id === grupoId).map(tg => tg.team_id)
+    );
+
+    if (assignedTeamIds.size === 0) {
+      const grupoRoundIds = rounds.filter(r => r.grupo_id === grupoId && !r.es_liguilla).map(r => r.id);
+      matches.filter(m => grupoRoundIds.includes(m.round_id)).forEach(m => {
+        assignedTeamIds.add(m.home_team_id);
+        assignedTeamIds.add(m.away_team_id);
+      });
+    }
+
+    if (assignedTeamIds.size === 0) return [];
+    return standings.filter(s => assignedTeamIds.has(s.team_id))
       .sort((a, b) => b.points - a.points || b.goal_difference - a.goal_difference || b.goals_for - a.goals_for);
   };
 
@@ -478,10 +483,10 @@ const ClubLeague = () => {
           <Tabs defaultValue="matches">
             <TabsList className="grid grid-cols-4 bg-[#121212] border border-white/10 p-1 h-auto">
               {[
-                { value: "matches",   Icon: Calendar,   label: "Partidos" },
-                { value: "standings", Icon: Trophy,      label: "Clasificación" },
-                { value: "stats",     Icon: TrendingUp,  label: "Estadísticas" },
-                { value: "news",      Icon: Newspaper,   label: "Noticias" },
+                { value: "matches", Icon: Calendar, label: "Partidos" },
+                { value: "standings", Icon: Trophy, label: "Clasificación" },
+                { value: "stats", Icon: TrendingUp, label: "Estadísticas" },
+                { value: "news", Icon: Newspaper, label: "Noticias" },
               ].map(({ value, Icon, label }) => (
                 <TabsTrigger key={value} value={value}
                   className="flex items-center gap-1.5 py-2 text-[11px] data-[state=active]:bg-[#DFFF00] data-[state=active]:text-black">
@@ -628,9 +633,8 @@ const ClubLeague = () => {
                       const gcpg = row.played ? (row.goals_against / row.played).toFixed(1) : "0.0";
                       const pct = row.played ? Math.round((row.won / row.played) * 100) : 0;
                       return (
-                        <div key={row.team_id || row.id} className={`flex items-center gap-3 p-3 rounded-xl border ${
-                          isMe ? "bg-[#DFFF00]/5 border-[#DFFF00]/20" : "bg-[#121212] border-white/5"
-                        }`}>
+                        <div key={row.team_id || row.id} className={`flex items-center gap-3 p-3 rounded-xl border ${isMe ? "bg-[#DFFF00]/5 border-[#DFFF00]/20" : "bg-[#121212] border-white/5"
+                          }`}>
                           <TeamLogo team={row.team} size="sm" />
                           <span className={`flex-1 font-medium text-sm truncate ${isMe ? "text-[#DFFF00]" : ""}`}>{row.team?.name}</span>
                           <div className="flex gap-1 hidden sm:flex">{form.map((r, i) => <FormBadge key={i} result={r} />)}</div>

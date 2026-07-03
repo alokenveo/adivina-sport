@@ -11,10 +11,10 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const STATUS_CONFIG = {
   scheduled: { label: "Programado", color: "bg-blue-500/20 text-blue-400" },
-  live:       { label: "En Juego",  color: "bg-green-500/20 text-green-400" },
-  finished:   { label: "Finalizado",color: "bg-zinc-700/50 text-zinc-400" },
-  postponed:  { label: "Aplazado", color: "bg-yellow-500/20 text-yellow-400" },
-  overdue:    { label: "No jugado", color: "bg-red-500/20 text-red-400" },
+  live: { label: "En Juego", color: "bg-green-500/20 text-green-400" },
+  finished: { label: "Finalizado", color: "bg-zinc-700/50 text-zinc-400" },
+  postponed: { label: "Aplazado", color: "bg-yellow-500/20 text-yellow-400" },
+  overdue: { label: "No jugado", color: "bg-red-500/20 text-red-400" },
 };
 
 // Detectar si un partido debería haberse jugado y no tiene resultado
@@ -86,7 +86,7 @@ export const MatchCardPublic = ({ match, isEmbedded = false, grupos = [], rounds
         : isEmbedded
           ? "bg-white/3 border-white/5 hover:border-white/10"
           : "bg-[#121212] border-white/5 hover:border-white/10"
-      } ${hasScorers ? "cursor-pointer" : ""}`}
+        } ${hasScorers ? "cursor-pointer" : ""}`}
       onClick={() => hasScorers && setExpanded(e => !e)}
     >
       <div className="flex items-center gap-3 px-3 py-2.5">
@@ -194,9 +194,9 @@ const StandingsTable = ({ standings, matches, isEmbedded = false, highlight3 = f
                 { h: "#", align: "left", pl: "16px" },
                 { h: "Equipo", align: "left" },
                 { h: "PJ", align: "center" },
-                { h: "G",  align: "center", color: "rgba(74,222,128,0.7)" },
-                { h: "E",  align: "center" },
-                { h: "P",  align: "center", color: "rgba(248,113,113,0.7)" },
+                { h: "G", align: "center", color: "rgba(74,222,128,0.7)" },
+                { h: "E", align: "center" },
+                { h: "P", align: "center", color: "rgba(248,113,113,0.7)" },
                 { h: "GF", align: "center" },
                 { h: "GC", align: "center" },
                 { h: "DG", align: "center" },
@@ -217,7 +217,7 @@ const StandingsTable = ({ standings, matches, isEmbedded = false, highlight3 = f
                 <tr key={row.team_id || row.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: highlight3 && isTop3 ? "rgba(223,255,0,0.02)" : "transparent" }}>
                   <td style={{ padding: "10px 8px 10px 16px", color: "rgba(240,239,232,0.25)", fontWeight: highlight3 && isTop3 ? 700 : 400 }}>
                     {highlight3 && isTop3
-                      ? <span style={{ color: ["#DFFF00","#aaa","#cd7f32"][idx] }}>{idx+1}</span>
+                      ? <span style={{ color: ["#DFFF00", "#aaa", "#cd7f32"][idx] }}>{idx + 1}</span>
                       : idx + 1
                     }
                   </td>
@@ -268,22 +268,25 @@ export const LeagueContent = ({ isEmbedded = false }) => {
   const [loading, setLoading] = useState(true);
   const [filterRound, setFilterRound] = useState("all");
   const [filterGrupo, setFilterGrupo] = useState("all");
+  const [teamGrupos, setTeamGrupos] = useState([]);
 
   const fetchAll = useCallback(async (seasonId) => {
     setLoading(true);
     try {
-      const [roundsRes, matchesRes, standingsRes, newsRes, gruposRes] = await Promise.all([
+      const [roundsRes, matchesRes, standingsRes, newsRes, gruposRes, teamGruposRes] = await Promise.all([
         axios.get(`${BACKEND_URL}/api/league/rounds?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/matches?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/standings?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/news?season_id=${seasonId}`),
         axios.get(`${BACKEND_URL}/api/league/grupos?season_id=${seasonId}`).catch(() => ({ data: [] })),
+        axios.get(`${BACKEND_URL}/api/league/team-grupos?season_id=${seasonId}`).catch(() => ({ data: [] }))
       ]);
       setRounds(roundsRes.data);
       setMatches(matchesRes.data);
       setStandings(standingsRes.data);
       setNews(newsRes.data);
       setGrupos(gruposRes.data);
+      setTeamGrupos(teamGruposRes.data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   }, []);
@@ -319,16 +322,22 @@ export const LeagueContent = ({ isEmbedded = false }) => {
 
   // Clasificación por grupo
   const getStandingsForGrupo = (grupoId) => {
-    // Para mostrar clasificación por grupo necesitamos saber qué equipos pertenecen al grupo
-    // Aproximamos mirando los partidos del grupo para identificar teams
-    const grupoRoundIds = rounds.filter(r => r.grupo_id === grupoId && !r.es_liguilla).map(r => r.id);
-    const grupoMatchTeams = new Set();
-    matches.filter(m => grupoRoundIds.includes(m.round_id)).forEach(m => {
-      grupoMatchTeams.add(m.home_team_id);
-      grupoMatchTeams.add(m.away_team_id);
-    });
-    if (grupoMatchTeams.size === 0) return [];
-    return standings.filter(s => grupoMatchTeams.has(s.team_id))
+    // Fuente de verdad: asignación explícita equipo→grupo (Portal Federación)
+    const assignedTeamIds = new Set(
+      teamGrupos.filter(tg => tg.grupo_id === grupoId).map(tg => tg.team_id)
+    );
+
+    // Fallback para temporadas sin asignación explícita: inferir por partidos jugados
+    if (assignedTeamIds.size === 0) {
+      const grupoRoundIds = rounds.filter(r => r.grupo_id === grupoId && !r.es_liguilla).map(r => r.id);
+      matches.filter(m => grupoRoundIds.includes(m.round_id)).forEach(m => {
+        assignedTeamIds.add(m.home_team_id);
+        assignedTeamIds.add(m.away_team_id);
+      });
+    }
+
+    if (assignedTeamIds.size === 0) return [];
+    return standings.filter(s => assignedTeamIds.has(s.team_id))
       .sort((a, b) => b.points - a.points || b.goal_difference - a.goal_difference || b.goals_for - a.goals_for);
   };
 
@@ -390,10 +399,10 @@ export const LeagueContent = ({ isEmbedded = false }) => {
       <Tabs defaultValue="matches">
         <TabsList className="grid grid-cols-4 bg-white/5 border border-white/10 p-1 h-auto mb-4">
           {[
-            { value: "matches",   Icon: Calendar,   label: "Partidos" },
-            { value: "standings", Icon: Trophy,      label: "Clasificación" },
-            { value: "stats",     Icon: TrendingUp,  label: "Estadísticas" },
-            { value: "news",      Icon: Newspaper,   label: "Noticias" },
+            { value: "matches", Icon: Calendar, label: "Partidos" },
+            { value: "standings", Icon: Trophy, label: "Clasificación" },
+            { value: "stats", Icon: TrendingUp, label: "Estadísticas" },
+            { value: "news", Icon: Newspaper, label: "Noticias" },
           ].map(({ value, Icon, label }) => (
             <TabsTrigger key={value} value={value}
               className="flex items-center gap-1.5 py-2 text-[11px] data-[state=active]:bg-[#DFFF00] data-[state=active]:text-black">
